@@ -1,9 +1,11 @@
 import numpy as np
 from func import *
+from matplotlib import pyplot as plot
+from MyImage import *
 
 
 def lab_1():
-    image = read_image('images/1grace.jpg')
+    image = read_image_gray('images/grace.jpg')
     width, height = image.size
     pix_mat = np.array(image).reshape(height, width)
 
@@ -59,17 +61,17 @@ def lab_2():
 
 
 def lab_4():
-    grace = read_image('images/1grace.jpg')
+    grace = read_image_gray('images/grace.jpg')
     neg = negative(grace)
     save(neg, 'grace_negative.jpg')
 
     c12_xcr = read_xcr('images/c12-85v.xcr', 5120, 1024, 1024)
-    c12_xcr = c12_xcr.byteswap()
+    #c12_xcr = c12_xcr.byteswap()
     width, height = len(c12_xcr[0]), len(c12_xcr)
     c12_xcr = grayscale(c12_xcr)
-    for i in range(width):
-        for j in range(height):
-            c12_xcr[i][j] = scale_to_255(c12_xcr[i][j])
+    #for i in range(width):
+    #    for j in range(height):
+    #        c12_xcr[i][j] = scale_to_255(c12_xcr[i][j])
     c12_xcr = np.rot90(c12_xcr)
 
     neg = negative(c12_xcr)
@@ -80,31 +82,31 @@ def lab_4():
     neg = negative(u0_xcr)
     save(grayscale(neg), 'u0_xcr_negative.jpg')
 
-    photo1 = read_image('images/photo1.jpg')
+    photo1 = read_image_gray('images/photo1.jpg')
     g = gamma_correction(np.array(photo1), 1, 0.4)
     save(grayscale(g), 'photo1_gamma.jpg')
     log = logarithmic_correction(np.array(photo1), 32)
     save(log, 'photo1_log.jpg')
 
-    photo2 = read_image('images/photo2.jpg')
+    photo2 = read_image_gray('images/photo2.jpg')
     g = gamma_correction(np.array(photo2), 1, 0.4)
     save(grayscale(g), 'photo2_gamma.jpg')
     log = logarithmic_correction(np.array(photo2), 30)
     save(log, 'photo2_log.jpg')
 
-    photo3 = read_image('images/photo3.jpg')
+    photo3 = read_image_gray('images/photo3.jpg')
     g = gamma_correction(np.array(photo3), 1, 0.4)
     save(grayscale(g), 'photo3_gamma.jpg')
     log = logarithmic_correction(np.array(photo3), 40)
     save(log, 'photo3_log.jpg')
 
-    photo4 = read_image('images/photo4.jpg')
+    photo4 = read_image_gray('images/photo4.jpg')
     g = gamma_correction(np.array(photo4), 1, 0.4)
     save(grayscale(g), 'photo4_gamma.jpg')
     log = logarithmic_correction(np.array(photo4), 40)
     save(log, 'photo4_log.jpg')
 
-    hollywood = read_image('images/HollywoodLC.jpg')
+    hollywood = read_image_gray('images/HollywoodLC.jpg')
     g = gamma_correction(np.array(hollywood), 1, 2)
     save(grayscale(g), 'hollywood_gamma.jpg')
     log = logarithmic_correction(np.array(hollywood), 25)
@@ -115,5 +117,24 @@ def lab_4():
 if __name__ == '__main__':
     # lab_1()  # ЛР №3 внутри
     # lab_2()  # ЛР №3 внутри
-    lab_4()
+    # lab_4()
+    image = MyImage.load('images/', 'grace.jpg', np.uint8)
+    #image.show()
+
+    hist = histogram_img(image.new_image, image.colors())
+    plot.plot(hist[0])
+    plot.show()
+    plot.plot(cdf_calc(hist[0])[0])
+    plot.show()
+
+    equalize_img(image)
+
+    image.save()
+
+    img = MyImage.load('images/', image.new_name, np.uint8)
+    h = histogram_img(img.new_image, img.colors())
+    plot.plot(h[0])
+    plot.show()
+    plot.plot(cdf_calc(h[0])[0])
+    plot.show()
 

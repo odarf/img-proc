@@ -3,8 +3,10 @@ import struct
 from PIL import Image, ImageDraw
 import numpy as np
 
+from MyImage import *
 
-def read_image(file):
+
+def read_image_gray(file):
     """
     :param file: путь до файла-картинки
     """
@@ -46,7 +48,7 @@ def scale_to_255(value):
         value += 255
     return value
 
-"""
+
 def grayscale(arr):
     print('Started making grayscale')
     x_min = np.amin(arr)
@@ -56,15 +58,15 @@ def grayscale(arr):
     dx = x_max - x_min
     for row in arr:
             # uint8.max = 255
-            calculated_x = [NormTo255(int((x - x_min) * 255 / dx)) for x in row]
+            calculated_x = [(int((x - x_min) * 255 / dx)) for x in row]
             grayscaled_data.append(calculated_x)
     print('Done making grayscale')
     output = np.array(grayscaled_data)
     output = normalization(output, 2)
     return output
+
+
 """
-
-
 def grayscale(arr):
     print('Started making grayscale')
     gs_data = []
@@ -89,6 +91,7 @@ def grayscale(arr):
                 temp.append(i)
             gs_data.append(temp)
         return gs_data
+"""
 
 
 def normalization(arr: list, dim: int, N=255):
@@ -112,6 +115,7 @@ def normalization(arr: list, dim: int, N=255):
         for col in range(width):
             normed_arr.append(arr[row][col])
     normed_arr = normalization(normed_arr, dim=1)
+
     return np.array(normed_arr).reshape(height, width)
 
 
@@ -123,7 +127,8 @@ def new_image(pixel_matrix, width, height):
     i = 0
     for y in range(height):
         for x in range(width):
-            draw.point((x, y), int(new_image_normalized[y][x]))
+            value = new_image_normalized[y][x]
+            draw.point((x, y), int(value))
             i += 1
 
     return image_new
@@ -211,7 +216,7 @@ def negative(arr):
     data1 = np.array(arr)
     data = grayscale(data1)
     width, height = len(data[0]), len(data)
-    #data = np.array(data).reshape(height, width)
+    data = np.array(data).reshape(height, width)
 
     for row in range(height):
         for col in range(width):
@@ -248,3 +253,54 @@ def logarithmic_correction(arr, constant):
     print('Logarithmic corr. done')
     # return np.array(data)
     return data
+
+
+def histogram_img(image: np.ndarray, colors: int):
+    hist = [0] * colors
+    for x in range(image.shape[0]):
+        for y in range(image.shape[1]):
+            i = image[x, y]
+            hist[i] += 1
+
+    return np.array(hist), '-histogram'
+
+
+def cdf_calc(histogram: np.ndarray):
+    value = [0] * len(histogram)
+    for i in range(len(histogram)):
+        for j in range(i+1):
+            value[i] += histogram[j]
+
+    return np.array(value), '-cdf'
+
+
+def eq(image: np.ndarray, cdf: np.ndarray):
+    output_data = image
+    cdf_min = cdf[cdf != 0].min()
+
+    for x in range(image.shape[0]):
+        for y in range(image.shape[1]):
+            output_data[x, y] = round(
+                (cdf[output_data[x, y]] - cdf_min) *
+                255.0 / (image.shape[0] * image.shape[1] - 1)
+            )
+
+    return output_data
+
+
+def equalize_img(image: MyImage):
+    hist = histogram_img(image.new_image, image.colors())[0]
+
+    #wrkng_img = image.new_image
+    #output_data = wrkng_img
+
+    cdf = cdf_calc(hist)[0]
+    # cdf_min = cdf[cdf != 0].min(0)
+    # for i in range(wrkng_img.shape[0]):
+    #     for j in range(wrkng_img.shape[1]):
+    #         output_data[i, j] = round(
+    #             (cdf[output_data[i, j]] - cdf_min) * 255.0 / (wrkng_img.shape[0] * wrkng_img.shape[1] - 1)
+    #         )
+    eq_img = eq(image.new_image, cdf)
+    image.update_image(eq_img, '-cdf-normed')
+    #return output_data
