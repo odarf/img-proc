@@ -1,9 +1,11 @@
 import numpy as np
 from func import *
+from matplotlib import pyplot as plot
+from MyImage import *
 
 
 def lab_1():
-    image = read_image('images/1grace.jpg')
+    image = read_image_gray('images/grace.jpg')
     width, height = image.size
     pix_mat = np.array(image).reshape(height, width)
 
@@ -30,6 +32,7 @@ def lab_1():
     rs = resize(image, 1.3, 'nearest', 'increase', width, height)
     save(rs, '1grace_nearest_resized.jpg')
 
+
 def lab_2():
     width12, height12 = 1024, 1024  # c12
     width0, height0 = 2048, 2500  # u0
@@ -54,22 +57,22 @@ def lab_2():
 
     rs = resize(u0_xcr_grayscaled, 0.6, 'bilinear', 'increase', width12, height12)
     save(rs, 'u0_xcr_test_x06_resized.jpg')
-    #rs = resize(u0_xcr_grayscaled, 0.6, 'nearest', 'increase', width12, height12)
-    #save(rs, 'u0_xcr_nearest_x06_resized.jpg')
+    # rs = resize(u0_xcr_grayscaled, 0.6, 'nearest', 'increase', width12, height12)
+    # save(rs, 'u0_xcr_nearest_x06_resized.jpg')
 
 
 def lab_4():
-    grace = read_image('images/1grace.jpg')
+    grace = read_image_gray('images/grace.jpg')
     neg = negative(grace)
     save(neg, 'grace_negative.jpg')
 
     c12_xcr = read_xcr('images/c12-85v.xcr', 5120, 1024, 1024)
-    c12_xcr = c12_xcr.byteswap()
+    # c12_xcr = c12_xcr.byteswap()
     width, height = len(c12_xcr[0]), len(c12_xcr)
     c12_xcr = grayscale(c12_xcr)
-    for i in range(width):
-        for j in range(height):
-            c12_xcr[i][j] = scale_to_255(c12_xcr[i][j])
+    # for i in range(width):
+    #    for j in range(height):
+    #        c12_xcr[i][j] = scale_to_255(c12_xcr[i][j])
     c12_xcr = np.rot90(c12_xcr)
 
     neg = negative(c12_xcr)
@@ -80,43 +83,124 @@ def lab_4():
     neg = negative(u0_xcr)
     save(grayscale(neg), 'u0_xcr_negative.jpg')
 
-    photo1 = read_image('images/photo1.jpg')
+    photo1 = read_image_gray('images/photo1.jpg')
     g = gamma_correction(np.array(photo1), 1, 0.4)
     save(grayscale(g), 'photo1_gamma.jpg')
     log = logarithmic_correction(np.array(photo1), 32)
     save(log, 'photo1_log.jpg')
 
-    photo2 = read_image('images/photo2.jpg')
+    photo2 = read_image_gray('images/photo2.jpg')
     g = gamma_correction(np.array(photo2), 1, 0.4)
     save(grayscale(g), 'photo2_gamma.jpg')
     log = logarithmic_correction(np.array(photo2), 30)
     save(log, 'photo2_log.jpg')
 
-    photo3 = read_image('images/photo3.jpg')
+    photo3 = read_image_gray('images/photo3.jpg')
     g = gamma_correction(np.array(photo3), 1, 0.4)
     save(grayscale(g), 'photo3_gamma.jpg')
     log = logarithmic_correction(np.array(photo3), 40)
     save(log, 'photo3_log.jpg')
 
-    photo4 = read_image('images/photo4.jpg')
+    photo4 = read_image_gray('images/photo4.jpg')
     g = gamma_correction(np.array(photo4), 1, 0.4)
     save(grayscale(g), 'photo4_gamma.jpg')
     log = logarithmic_correction(np.array(photo4), 40)
     save(log, 'photo4_log.jpg')
 
-    hollywood = read_image('images/HollywoodLC.jpg')
+    hollywood = read_image_gray('images/HollywoodLC.jpg')
     g = gamma_correction(np.array(hollywood), 1, 2)
     save(grayscale(g), 'hollywood_gamma.jpg')
     log = logarithmic_correction(np.array(hollywood), 25)
     save(log, 'hollywood_log.jpg')
 
 
+def lab_5(image: MyImage):
+    hist = histogram_img(image.new_image, image.colors())
+    plot.plot(hist[0])
+    plot.savefig(image.dir + 'plots/' + image.fname + 'OrigHist')
+    plot.show()
+    plot.plot(cdf_calc(hist[0])[0])
+    plot.savefig(image.dir + 'plots/' + image.fname + 'OrigCdf')
+    plot.show()
+
+    equalize_img(image)
+
+    # image.show_image()
+
+    image.save_image()
+
+    img = MyImage.load_image('images/', image.new_fname, np.uint8)
+    # img.show_image()
+    h = histogram_img(img.new_image, img.colors())
+    plot.plot(h[0])
+    plot.savefig(img.dir + 'plots/' + img.fname + 'EqHist')
+    plot.show()
+    plot.plot(cdf_calc(h[0])[0])
+    plot.savefig(img.dir + 'plots/' + img.fname + 'EqCdf')
+    plot.show()
+
+
+# image.rotate90_ccw()
+# negative(image)
+#
+# hist = histogram_img(image.new_image, image.colors())
+# plot.plot(hist[0])
+# plot.show()
+# plot.plot(cdf_calc(hist[0])[0])
+# plot.show()
+#
+# equalize_img(image)
+# image.save_image()
+#
+# img = MyImage.load_image('images/', image.new_fname, np.uint8)
+# h = histogram_img(img.new_image, img.colors())
+# plot.plot(h[0])
+# plot.show()
+# plot.plot(cdf_calc(h[0])[0])
+# plot.show()
+
 
 if __name__ == '__main__':
     # lab_1()  # ЛР №3 внутри
     # lab_2()  # ЛР №3 внутри
     # lab_4()
-    photo = read_image('photo_2022-03-16_15-58-36.jpg')
-    neg = negative(photo)
-    save(neg, 'uliana.jpg')
+    images = [
+        MyImage.load_image('images/', 'photo1', np.uint8),
+        MyImage.load_image('images/', 'photo2', np.uint8),
+        MyImage.load_image('images/', 'photo3', np.uint8),
+        MyImage.load_image('images/', 'photo4', np.uint8),
+        MyImage.load_image('images/', 'HollywoodLC', np.uint8),
+        MyImage.load_image('images/', 'grace', np.uint8)
+    ]
+
+    xcrs = [
+        MyImage.load_binary('images/', 'u0', '>H', 2048, 2500, 5120),
+        MyImage.load_binary('images/', 'c12-85v', '>H', 1024, 1024, 5120)
+    ]
+
+    percent = 100 / len(images)
+    completed = percent
+    for image in images:
+        lab_5(image)
+        print(str(completed) + '% completed')
+        completed += percent
+
+    percent = 100 / len(xcrs)
+    completed = percent
+    for image in xcrs:
+        image.rotate90_ccw()
+        negative(image)
+
+        lab_5(image)
+        print(str(completed) + '% completed')
+        completed += percent
+
+    # img = MyImage.load_image('images/', 'photo1', np.uint8)
+    # hist = histogram_img(img.new_image, img.colors())
+    # cdf = cdf_calc(hist[0])[0]
+    #
+    #
+    #
+    # plot.plot(hist[0])
+    # plot.show()
 
