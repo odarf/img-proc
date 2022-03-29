@@ -115,5 +115,8 @@ def lab_4():
 if __name__ == '__main__':
     # lab_1()  # ЛР №3 внутри
     # lab_2()  # ЛР №3 внутри
-    lab_4()
+    # lab_4()
+    photo = read_image('photo_2022-03-16_15-58-36.jpg')
+    neg = negative(photo)
+    save(neg, 'uliana.jpg')
 

@@ -208,9 +208,10 @@ def resize(image, coefficient, resize_type, mode, width, height):
 
 def negative(arr):
     print('Started negativization')
-    data1 = np.array(arr)
-    data = grayscale(data1)
-    width, height = len(data[0]), len(data)
+    data = np.array(arr)
+    # data = grayscale(data1)
+    #width, height = len(data[0]), len(data)
+    width, height = 615, 820
     #data = np.array(data).reshape(height, width)
 
     for row in range(height):
