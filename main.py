@@ -160,47 +160,62 @@ def lab_5(image: MyImage):
 # plot.show()
 
 
+def lab_6():
+    c12 = MyImage.load_image('images/lab6/', 'c12-85v', np.uint8)
+    u0 = MyImage.load_image('images/lab6/', 'u0', np.uint8)
+    moire_frequences = moire_detector(c12, 32)
+    is_fixed = moire_fixer(c12, moire_frequences, True, 0.17, 32)
+
+    if is_fixed:
+        c12.save_image()
+
+    moire_frequences = moire_detector(u0, 32)
+    is_fixed = moire_fixer(u0, moire_frequences, True, 0.17, 32)
+
+    if is_fixed:
+        u0.save_image()
+
+
+def lab_7():
+    image = MyImage.load_image('images/lab7/', 'model', np.uint8)
+
+
 if __name__ == '__main__':
     # lab_1()  # ЛР №3 внутри
     # lab_2()  # ЛР №3 внутри
     # lab_4()
-    images = [
-        MyImage.load_image('images/', 'photo1', np.uint8),
-        MyImage.load_image('images/', 'photo2', np.uint8),
-        MyImage.load_image('images/', 'photo3', np.uint8),
-        MyImage.load_image('images/', 'photo4', np.uint8),
-        MyImage.load_image('images/', 'HollywoodLC', np.uint8),
-        MyImage.load_image('images/', 'grace', np.uint8)
-    ]
 
-    xcrs = [
-        MyImage.load_binary('images/', 'u0', '>H', 2048, 2500, 5120),
-        MyImage.load_binary('images/', 'c12-85v', '>H', 1024, 1024, 5120)
-    ]
-
-    percent = 100 / len(images)
-    completed = percent
-    for image in images:
-        lab_5(image)
-        print(str(completed) + '% completed')
-        completed += percent
-
-    percent = 100 / len(xcrs)
-    completed = percent
-    for image in xcrs:
-        image.rotate90_ccw()
-        negative(image)
-
-        lab_5(image)
-        print(str(completed) + '% completed')
-        completed += percent
-
-    # img = MyImage.load_image('images/', 'photo1', np.uint8)
-    # hist = histogram_img(img.new_image, img.colors())
-    # cdf = cdf_calc(hist[0])[0]
+    # Лабораторная 5
+    # images = [
+    #     MyImage.load_image('images/', 'photo1', np.uint8),
+    #     MyImage.load_image('images/', 'photo2', np.uint8),
+    #     MyImage.load_image('images/', 'photo3', np.uint8),
+    #     MyImage.load_image('images/', 'photo4', np.uint8),
+    #     MyImage.load_image('images/', 'HollywoodLC', np.uint8),
+    #     MyImage.load_image('images/', 'grace', np.uint8)
+    # ]
     #
+    # xcrs = [
+    #     MyImage.load_binary('images/', 'u0', '>H', 2048, 2500, 5120),
+    #     MyImage.load_binary('images/', 'c12-85v', '>H', 1024, 1024, 5120)
+    # ]
     #
+    # percent = 100 / len(images)
+    # completed = percent
+    # for image in images:
+    #     lab_5(image)
+    #     print(str(completed) + '% completed')
+    #     completed += percent
     #
-    # plot.plot(hist[0])
-    # plot.show()
+    # percent = 100 / len(xcrs)
+    # completed = percent
+    # for image in xcrs:
+    #     image.rotate90_ccw()
+    #     negative(image)
+    #
+    #     lab_5(image)
+    #     print(str(completed) + '% completed')
+    #     completed += percent
+    # lab_6()
+    lab_7()
 

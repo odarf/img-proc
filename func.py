@@ -1,10 +1,16 @@
+import math
+import random
 import struct
 
+import matplotlib.pyplot
 from PIL import Image, ImageDraw
 import numpy as np
 
+from MyFourier import *
 from MyImage import *
+import filters
 
+import numba
 
 # Устарело
 def read_image_gray(file):
@@ -293,3 +299,239 @@ def equalize_img(image: MyImage):
     eq_img = eq(image.new_image, cdf)
     image.update_image(eq_img, '-cdf-normed')
     #return output_data
+
+
+def diff(input_data, dx=1):
+    return np.diff(input_data) / dx
+
+
+@numba.jit(nopython=True)
+def convolution(data1, data2, dt):
+    x = []
+    y = []
+
+    for i in range(len(data1) + len(data2)):
+        sum = 0
+        for j in range(len(data2)):
+            if 0 <= (i - j) < len(data1):
+                sum += data1[i - j] * data2[j]
+            else:
+                sum = 0
+
+        if (len(data2) / 2) <= i < (len(data1) + len(data2) / 2):
+            y.append(sum)
+            x.append((i - len(data2) / 2) * dt)
+
+    return [x, y]
+
+
+@numba.jit(nopython=True)
+def auto_correlation(input_data):
+    output_data = []
+    mean = np.mean(input_data)
+    disp = np.var(input_data)
+
+    def autocorr(shift):
+        value = 0
+        for j in range(len(input_data) - shift):
+            temp = (input_data[j] - mean) * (input_data[j + shift] - mean)
+            value += temp
+        return round(value / (disp * len(input_data)), 3)
+
+    for i in range(len(input_data)):
+        output_data.append(autocorr(i))
+
+    return np.array(output_data)
+
+
+@numba.jit(nopython=True)
+def mutual_correlation(data1, data2) -> np.ndarray:
+    mean1 = np.mean(data1)
+    mean2 = np.mean(data2)
+    N = len(data1)
+    output_data = []
+
+    def autocorr(shift):
+        auto_corr_value = 0
+        for j in range(N - shift):
+            buff = (data1[j] - mean1) * (data2[j + shift] - mean2)
+            auto_corr_value += buff
+        return round(auto_corr_value / N, 3)
+
+    for i in range(N):
+        output_data.append(autocorr(i))
+
+    return np.array(output_data)
+
+
+@numba.jit(nopython=True)
+def four_spectrum(data, N):
+    re = [0 for i in range(N)]
+    im = [0 for i in range(N)]
+
+    for i in range(N):
+        for j in range(N):
+            re[i] += (data[j] * math.cos((2 * math.pi * i * j) / N))
+            im[i] += (data[j] * math.sin((2 * math.pi * i * j) / N))
+        re[i] *= (1 / N)
+        im[i] *= (1 / N)
+
+    values = []
+    for i in range(N):
+        values.append(math.sqrt((re[i]) ** 2 + (im[i]) ** 2))
+    return values
+
+
+def one_d_four(data, dt) -> MyFourier:
+    return MyFourier(np.fft.fft(data), dt)
+
+
+def four_amplitude(data: np.ndarray, dt) -> MyFourier:
+    return one_d_four(data, dt).amplitude()
+
+
+def moire_detector(image: MyImage, m, q=0.7, dt=1):
+    buff = []
+    for i in range(0, len(image.new_image), m):
+        row = image.new_image[i]
+        buff.append(np.diff(row)/dt)
+
+    auto_corr_frequencies = []
+    for i in buff:
+        auto_corr_values = auto_correlation(i)
+        fourier_ac = four_amplitude(auto_corr_values, dt)
+        fourier_ac_max_value_index = np.argmax(fourier_ac[1])
+        max_four_ac_freqs = fourier_ac[0][fourier_ac_max_value_index] // 0.01 * 0.01
+
+        auto_corr_frequencies.append(max_four_ac_freqs)
+
+    mutual_corr_frequencies = []
+    for i in range(0, len(buff)):
+        row1 = buff[i]
+        row2 = buff[(i + 1) % len(buff)]
+        mutual_corr_values = mutual_correlation(row1, row2)
+        fourier_mc = four_amplitude(mutual_corr_values, dt)
+        fourier_mc_max_value_index = np.argmax(fourier_mc[1])
+        max_freq_mc = fourier_mc[0][fourier_mc_max_value_index] // 0.01 * 0.01
+
+        mutual_corr_frequencies.append(max_freq_mc)
+
+    combined_frequencies = auto_corr_frequencies + mutual_corr_frequencies
+    freqs_count = {}
+
+    for freq in combined_frequencies:
+        if freq in freqs_count:
+            freqs_count[freq] += 1
+        else:
+            freqs_count[freq] = 1
+
+    output_data = []
+
+    for key in freqs_count:
+        valuuue = freqs_count[key]  # debug variable
+        if (valuuue / len(combined_frequencies)) >= q:
+            output_data.append(key)
+
+    return output_data
+
+
+def moire_fixer(image: MyImage, freqs, apply_vertical_fix, shift, m) -> bool:
+    if len(freqs) == 0:
+        print('Can\'t find any artifacts on image, size of freqs = 0')
+        return False
+
+    first_top_freq = freqs[0]
+    filter = filters.bsw_filter(first_top_freq - shift, first_top_freq + shift, 1, m)[1]
+
+    print('Working frequency ' + str(first_top_freq))
+
+    result = []
+    for row in image.new_image:
+        conv = convolution(np.array(row), np.array(filter), 1)[1]
+        result.append(conv)
+
+    if apply_vertical_fix:
+        rotated = np.rot90(result)
+        result = []
+        for row in rotated:
+            conv = convolution(np.array(row), np.array(filter), 1)[1]
+            result.append(conv)
+        image.update_image(np.rot90(result, k=3), '-moireFixed')
+    else:
+        image.update_image(result, '-moireFixed')
+
+    print('Image ' + image.dir + image.fname + image.ext + ' is fixed')
+
+    return True
+
+
+def salt_and_pepper(image: MyImage, amount_of_dots):
+    output_data = []
+    for i in image.new_image:
+        output_data.append(salt_and_pepper_for_line(i, amount_of_dots))
+
+    image.update_image(output_data, '-saltedPeppered')
+
+
+def salt_and_pepper_for_line(input_data, amount_of_dots) -> np.ndarray:
+    output_data = []
+    for i in input_data:
+        p = random.randint(0, 1000)
+        if p < amount_of_dots:
+            output_data.append(0)
+        elif 300 < p < (300 + amount_of_dots):
+            output_data.append(255)
+        else:
+            output_data.append(i)
+
+    return np.array(output_data)
+
+
+def random_noise(image: MyImage, int):
+    output_data = []
+    for row in image.new_image:
+        output_data.append(random_noise_for_line(row, int))
+
+    image.update_image(output_data, '-randNoised')
+
+
+def random_noise_for_line(input_data, int) -> np.ndarray:
+    output_data = []
+    for value in input_data:
+        noise = random.randint(0, int)
+        plus_or_minus = random.randint(1, 3)
+
+        if plus_or_minus == 2:
+            output_data.append((value + noise) % 255)
+        else:
+            output_data.append((value - noise) % 255)
+
+    return np.array(output_data)
+
+
+def linear_filter(image: MyImage, kernel):
+    image = image.new_image
+    mask = np.ones([kernel, kernel], dtype=int)
+    output = np.zeros_like(image)
+
+    image_padded = np.zeros((image.shape[0] + kernel - 1, image.shape[1] + kernel - 1))
+    image_padded[1:-1, 1:-1] = image
+
+    for i in range(image.shape[1]):
+        for j in range(image.shape[0]):
+            output[j, i] = np.mean((mask * image_padded[j: j+kernel, i: i+kernel]))
+
+    image.update_image(np.array(output), '-linearFiltered')
+
+
+def median_filter(image: MyImage, kernel):
+    image = image.new_image
+    output = np.zeros_like(image)
+    image_padded = np.zeros((image.shape[0] + kernel - 1, image.shape[1] + kernel - 1))
+    image_padded[1:-1, 1:-1] = image
+
+    for i in range(image.shape[1]):
+        for j in range(image.shape[0]):
+            output[j, i] = np.median(image_padded[j: j+kernel, i: i+kernel])
+
+    image.update_image(np.array(output), '-medianFiltered')
