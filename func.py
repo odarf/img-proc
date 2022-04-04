@@ -305,24 +305,19 @@ def diff(input_data, dx=1):
     return np.diff(input_data) / dx
 
 
-@numba.jit(nopython=True)
-def convolution(data1, data2, dt):
-    x = []
-    y = []
+def convolution(x, h):
+    n = len(x)
+    m = len(h)
+    output_data = [0]*(n+m)
+    temp_n = n + m - 1
+    for i in range(temp_n):
+        # (if_test_is_false, if_test_is_true)[test]
+        jmn = (0, i - (m - 1))[i >= m - 1]
+        jmx = (n - 1, i)[i < n - 1]
+        for j in range(jmn, jmx+1):
+            output_data[i] += x[j] * h[i-j]
 
-    for i in range(len(data1) + len(data2)):
-        sum = 0
-        for j in range(len(data2)):
-            if 0 <= (i - j) < len(data1):
-                sum += data1[i - j] * data2[j]
-            else:
-                sum = 0
-
-        if (len(data2) / 2) <= i < (len(data1) + len(data2) / 2):
-            y.append(sum)
-            x.append((i - len(data2) / 2) * dt)
-
-    return [x, y]
+    return output_data
 
 
 @numba.jit(nopython=True)
@@ -509,8 +504,8 @@ def random_noise_for_line(input_data, int) -> np.ndarray:
     return np.array(output_data)
 
 
-def linear_filter(image: MyImage, kernel):
-    image = image.new_image
+def linear_filter(image_in: MyImage, kernel):
+    image = image_in.new_image
     mask = np.ones([kernel, kernel], dtype=int)
     output = np.zeros_like(image)
 
@@ -521,11 +516,11 @@ def linear_filter(image: MyImage, kernel):
         for j in range(image.shape[0]):
             output[j, i] = np.mean((mask * image_padded[j: j+kernel, i: i+kernel]))
 
-    image.update_image(np.array(output), '-linearFiltered')
+    image_in.update_image(np.array(output), '-linearFiltered')
 
 
-def median_filter(image: MyImage, kernel):
-    image = image.new_image
+def median_filter(image_in: MyImage, kernel):
+    image = image_in.new_image
     output = np.zeros_like(image)
     image_padded = np.zeros((image.shape[0] + kernel - 1, image.shape[1] + kernel - 1))
     image_padded[1:-1, 1:-1] = image
@@ -534,4 +529,62 @@ def median_filter(image: MyImage, kernel):
         for j in range(image.shape[0]):
             output[j, i] = np.median(image_padded[j: j+kernel, i: i+kernel])
 
-    image.update_image(np.array(output), '-medianFiltered')
+    image_in.update_image(np.array(output), '-medianFiltered')
+
+
+def cardiogram(dt):
+    n = 1000
+    m = 200
+    x = [0]*n
+    h = [0]*m
+    y = [0]*(n+m)
+    alpha = 10
+    frequency = 4
+    temp_n = n + m - 1
+
+    for i in range(len(h)):
+        h[i] = math.sin(2 * math.pi * frequency * (i*dt)) * math.exp(-alpha * (i * dt))
+
+    x[200] = 120
+
+    y = convolution(x, h)
+
+    return y
+
+
+# def fourier(input_data):
+#     length = len(input_data)
+#     real = 0.0
+#     imagine = 0.0
+#     for i in range(int(length/2)):
+#         real = 0.0
+#         imagine = 0.0
+#         for j in range(length):
+#             real += input_data[j] * math.cos((2.0 * math.pi * i * j) / length)
+#             imagine += input_data[j] * math.sin((2.0 * math.pi * i * j) / length)
+#         real /= length
+#         imagine /= length
+#
+#     return real, imagine
+
+
+# def fourier_amplitude(input_data):
+#     length = len(input_data)
+#     output_data = []
+#     for i in range(int(length/2)):
+#         real = 0.0
+#         imagine = 0.0
+#         for j in range(length):
+#             real += input_data[j] * math.cos((2.0 * math.pi * i * j) / length)
+#             imagine += input_data[j] * math.sin((2.0 * math.pi * i * j) / length)
+#         real /= length
+#         imagine /= length
+#         y = math.sqrt(real*real + imagine*imagine)
+#         output_data.append(y)
+#
+#     return output_data
+
+
+def twodfour(data):
+    return np.fft.fft2(data)
+

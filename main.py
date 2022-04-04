@@ -1,7 +1,10 @@
 import numpy as np
+
+import func
 from func import *
 from matplotlib import pyplot as plot
 from MyImage import *
+from MyFourier import *
 
 
 def lab_1():
@@ -179,6 +182,50 @@ def lab_6():
 def lab_7():
     image = MyImage.load_image('images/lab7/', 'model', np.uint8)
 
+    salt_and_pepper(image, 20)
+    image.save_image()
+
+    image_lf = image.copy_image()
+    #image_lf.fname += str('test_lf')
+
+    linear_filter(image_lf, 3)
+    image_lf.save_image()
+
+    image_mf = image.copy_image()
+    #image_mf.fname += str('test_mf')
+
+    median_filter(image_mf, 3)
+    image_mf.save_image()
+
+
+def lab_8():
+    dt = 0.005
+    cardio = cardiogram(dt)
+    plot.plot(cardio)
+    plot.title("Cardiogram")
+    plot.show()
+
+    four = MyFourier.fourier_one_dimension(cardio, dt)
+    plot.plot(four.amplitude())
+    plot.title("Amplitude")
+    plot.show()
+
+    four_back = four.four_inverse_one_dimensional()
+    plot.plot(four_back)
+    plot.title("Inverse fourier")
+    plot.show()
+    image = MyImage.load_image('images/', 'grace', np.uint8)
+    twod = four.fourier_two_dimension(four, image)
+    image.update_image(np.array(twod), '-twoD')
+    image.save_image()
+
+    image = MyImage.load_image('images/', 'grace', np.uint8)
+    twod2 = twodfour(image.new_image)
+    twod2 = np.fft.ifft2(twod)
+    image.update_image(np.array(twod2), '-twoD_vstroen_back')
+    image.save_image()
+
+
 
 if __name__ == '__main__':
     # lab_1()  # ЛР №3 внутри
@@ -216,6 +263,8 @@ if __name__ == '__main__':
     #     lab_5(image)
     #     print(str(completed) + '% completed')
     #     completed += percent
+
     # lab_6()
-    lab_7()
+    # lab_7()
+    lab_8()
 
