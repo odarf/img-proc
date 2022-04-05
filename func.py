@@ -259,6 +259,16 @@ def logarithmic_correction(arr, constant):
     return data
 
 
+def power_grad(arr, constant, power):
+    width, height = len(arr[0]), len(arr)
+    data = arr
+    for row in range(height):
+        for col in range(width):
+            data[row][col] = constant * np.power(data[row][col], power)
+
+    return data
+
+
 def histogram_img(image: np.ndarray, colors: int):
     hist = [0] * colors
     for x in range(image.shape[0]):
@@ -588,3 +598,90 @@ def cardiogram(dt):
 def twodfour(data):
     return np.fft.fft2(data)
 
+"""
+@numba.jit(nopython=True)
+def fourier(input_data):
+    length = len(input_data)
+    arg = 2.0 * math.pi / length
+    real_values = []
+    complex_values = []
+    fourier_data = []
+    for i in range(int(length)):
+        real = 0.0
+        complex = 0.0
+        for j in range(length):
+            real += input_data[j] * math.cos(arg * i * j)
+            complex += input_data[j] * math.sin(arg * i * j)
+        real /= length
+        complex /= length
+        fourier_data.append(real + complex)
+        real_values.append(real)
+        complex_values.append(complex)
+    return fourier_data
+
+
+# @numba.jit(nopython=True)
+def fourier_two_dimension(image, dt=1):
+    data = image
+    m_rows = data.shape[0]
+    n_cols = data.shape[1]
+    for i in range(m_rows):
+        stroka = []
+        for j in range(n_cols):
+            stroka.append(data[i][j])
+        four_stroki = fourier(stroka)
+        for j in range(len(four_stroki)-1, int(len(four_stroki)/2), -1):
+            four_stroki.pop(j)
+        rev = four_stroki[::-1]
+        four_stroki = rev + four_stroki
+        four_stroki.pop(0)
+        four_stroki.pop(480)
+
+        # @numba.jit(nopython=True)
+        # def foo():
+        #     for k in range(len(four_stroki)):
+        #         for j in range(n_cols):
+        #             data[i][j] = four_stroki[k]
+        #
+        # foo()
+
+        for j in range(n_cols):
+            data[i][j] = four_stroki[j]
+        print('1')
+
+    print(str(data.shape[0]) + ' ' + str(data.shape[1]))
+
+    for col in range(1, n_cols):
+        stolbec = []
+        for row in range(m_rows):
+            stolbec.append(data[row][col])
+        four_stolbca = fourier(stolbec)
+        #print('1')
+        for i in range(len(four_stolbca)-1, int(len(four_stolbca)/2), -1):
+            four_stolbca.pop(i)
+        #print('1')
+        rev = four_stolbca[::-1]
+        four_stolbca = rev + four_stolbca
+        #print('1')
+        for i in range(m_rows):
+            data[i][col] = four_stolbca[i]
+
+
+
+    # for i in range(1, n_cols):
+    #     stolbec = np.array(data[:, i])
+    #     four_stolbca = fourier(stolbec)
+    #     for j in range(len(four_stolbca)-1, int(len(four_stolbca)/2), -1):
+    #         four_stolbca.pop(j)
+    #     rev = four_stolbca[::-1]
+    #     four_stolbca.append(rev)
+    #     data[:, i] = four_stolbca[0]
+
+    print('end')
+    #
+    for row in range(m_rows):
+        for col in range(n_cols):
+            data[row][col] = 255 - data[row][col]
+
+    return data
+"""

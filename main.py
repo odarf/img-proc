@@ -214,8 +214,9 @@ def lab_8():
     plot.plot(four_back)
     plot.title("Inverse fourier")
     plot.show()
-    image = MyImage.load_image('images/', 'grace', np.uint8)
-    twod = four.fourier_two_dimension(four, image)
+    image = MyImage.load_image('images/', 'test', np.uint8)
+    power_grad(image.new_image, 2, 3)
+    twod = four.fourier_two_dimension(four, image.new_image)
     image.update_image(np.array(twod), '-twoD')
     image.save_image()
 
