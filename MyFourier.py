@@ -1,8 +1,5 @@
-import matplotlib.pyplot
 import numba
-import numpy as np
 import math
-from PIL import Image
 
 from MyImage import *
 
@@ -42,8 +39,6 @@ class MyFourier:
     def fourier_ampl(input_data):
         length = len(input_data)
         arg = 2.0 * math.pi / length
-        real_values = []
-        complex_values = []
         fourier_data = []
         for i in range(int(length)):
             real = 0.0
@@ -53,9 +48,8 @@ class MyFourier:
                 complex += input_data[j] * math.sin(arg * i * j)
             real /= length
             complex /= length
-            fourier_data.append(real**2 + complex**2)
-            real_values.append(real)
-            complex_values.append(complex)
+            y = math.sqrt(real**2 + complex**2)
+            fourier_data.append(y)
         return fourier_data
 
     @staticmethod
@@ -63,8 +57,6 @@ class MyFourier:
     def fourier_complex(input_data):
         length = len(input_data)
         arg = 2.0 * math.pi / length
-        real_values = []
-        complex_values = []
         fourier_data = []
         for i in range(int(length)):
             real = 0.0
@@ -75,14 +67,14 @@ class MyFourier:
             real /= length
             complex /= length
             fourier_data.append(real + complex)
-            real_values.append(real)
-            complex_values.append(complex)
         return fourier_data
 
     @staticmethod
     # @numba.jit(nopython=True)
     def fourier_two_dimension(self, image, dt=1):
         data = image
+        #w_data = data
+
         m_rows = data.shape[0]
         n_cols = data.shape[1]
         for i in range(m_rows):
@@ -109,9 +101,7 @@ class MyFourier:
                 data[i][j] = four_stroki[j]
             print('1')
 
-        print(str(data.shape[0]) + ' ' + str(data.shape[1]))
-
-        for col in range(1, n_cols):
+        for col in range(n_cols):
             stolbec = []
             for row in range(m_rows):
                 stolbec.append(data[row][col])
@@ -173,3 +163,14 @@ class MyFourier:
         for i in range(int(len(self.real_part)/2)):
             output_data.append(math.sqrt(self.real_part[i]**2 + self.complex_part[i]**2))
         return output_data
+
+    def amplitude_vstroen(self):
+        y = np.abs(self.fourier_data * self.dt)
+        x = np.fft.fftfreq(len(self.fourier_data), self.dt)
+
+        zero_index = x.tolist().index(np.max(x))
+
+        return np.array([x[:zero_index], y[:zero_index]])
+
+    def two_d_back_vstroen(self):
+        return np.fft.ifft2(self.fourier_data)

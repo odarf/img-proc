@@ -12,6 +12,7 @@ import filters
 
 import numba
 
+
 # Устарело
 def read_image_gray(file):
     """
@@ -44,7 +45,7 @@ def save(data, saveas: str):
     :param data: входные данные
     :param saveas: путь до сохраняемого файла
     """
-    Image.fromarray(np.array(data, copy=True).astype(np.uint8)).save_image(saveas)
+    Image.fromarray(np.array(data, copy=True).astype(np.uint8)).save(saveas)
     print('File ' + saveas + ' saved')
 
 
@@ -65,41 +66,39 @@ def grayscale(arr):
     grayscaled_data = []
     dx = x_max - x_min
     for row in arr:
-            # uint8.max = 255
-            calculated_x = [(int((x - x_min) * 255 / dx)) for x in row]
-            grayscaled_data.append(calculated_x)
+        # uint8.max = 255
+        calculated_x = [(int((x - x_min) * 255 / dx)) for x in row]
+        grayscaled_data.append(calculated_x)
     print('Done making grayscale')
     output = np.array(grayscaled_data)
-    output = normalization(output, 2)
+    # output = normalization(output, 2)
     return output
 
 
-"""
-def grayscale(arr):
-    print('Started making grayscale')
-    gs_data = []
-    if len(np.array(arr).shape) == 2:
-        x_max = np.max(arr)
-        x_min = np.min(arr)
-        dx = x_max - x_min
-        for i in arr:
-            calculated_x = int((i[0] - x_min) * 255) / dx
-            i = (calculated_x, calculated_x, calculated_x)
-            gs_data.append(i)
-        return gs_data
-    if len(np.array(arr).shape) == 3:
-        x_max = np.amax(arr)[0]
-        x_min = np.amin(arr)[0]
-        dx = x_max - x_min
-        for i in arr:
-            temp = []
-            for j in i:
-                calculated_x = int((i[0] - x_min) * 255) / dx
-                i = [calculated_x, calculated_x, calculated_x]
-                temp.append(i)
-            gs_data.append(temp)
-        return gs_data
-"""
+# def grayscale(arr):
+#     print('Started making grayscale')
+#     gs_data = []
+#     if len(np.array(arr).shape) == 2:
+#         x_max = np.max(arr)
+#         x_min = np.min(arr)
+#         dx = x_max - x_min
+#         for i in arr:
+#             calculated_x = int((i[0] - x_min) * 255) / dx
+#             i = (calculated_x, calculated_x, calculated_x)
+#             gs_data.append(i)
+#         return gs_data
+#     if len(np.array(arr).shape) == 3:
+#         x_max = np.amax(arr)[0]
+#         x_min = np.amin(arr)[0]
+#         dx = x_max - x_min
+#         for i in arr:
+#             temp = []
+#             for j in i:
+#                 calculated_x = int((i[0] - x_min) * 255) / dx
+#                 i = [calculated_x, calculated_x, calculated_x]
+#                 temp.append(i)
+#             gs_data.append(temp)
+#         return gs_data
 
 
 def normalization(arr: list, dim: int, N=255):
@@ -153,8 +152,8 @@ def resize(image, coefficient, resize_type, mode, width, height):
     print('Started resizing')
     input_to_array = np.array(image)
     array_to_image = Image.fromarray(input_to_array.astype(np.uint8))
-    pixel_matrix = array_to_image.load_image()
-    asd = array_to_image.resize((int(width / coefficient), int(height / coefficient)), Image.NEAREST)
+    pixel_matrix = array_to_image.load()
+    # pixel_matrix = image
 
     w, h = width, height
     if mode == 'increase':
@@ -200,7 +199,7 @@ def resize(image, coefficient, resize_type, mode, width, height):
                 draw.point((col, new_hight), pixel_matrix[int(col * coefficient), int((new_hight - 1) * coefficient)])
             else:
                 pass
-        pix_bilinear_rows = image_bilinear_rows.load_image()
+        pix_bilinear_rows = image_bilinear_rows.load()
         image_bilinear_resized = Image.new('L', (new_width, new_hight))
         draw_2 = ImageDraw.Draw(image_bilinear_resized)
         for row in range(1, (new_hight - 1)):
@@ -282,7 +281,7 @@ def histogram_img(image: np.ndarray, colors: int):
 def cdf_calc(histogram: np.ndarray):
     value = [0] * len(histogram)
     for i in range(len(histogram)):
-        for j in range(i+1):
+        for j in range(i + 1):
             value[i] += histogram[j]
 
     return np.array(value), '-cdf'
@@ -296,7 +295,7 @@ def eq(image: np.ndarray, cdf: np.ndarray) -> np.ndarray:
         for y in range(image.shape[1]):
             output_data[x, y] = round((cdf[output_data[x, y]] - cdf_min) * 255 /
                                       (image.shape[0] * image.shape[1] - 1)
-            )
+                                      )
 
     return output_data
 
@@ -308,7 +307,7 @@ def equalize_img(image: MyImage):
 
     eq_img = eq(image.new_image, cdf)
     image.update_image(eq_img, '-cdf-normed')
-    #return output_data
+    # return output_data
 
 
 def diff(input_data, dx=1):
@@ -318,14 +317,14 @@ def diff(input_data, dx=1):
 def convolution(x, h):
     n = len(x)
     m = len(h)
-    output_data = [0]*(n+m)
+    output_data = [0] * (n + m)
     temp_n = n + m - 1
     for i in range(temp_n):
         # (if_test_is_false, if_test_is_true)[test]
         jmn = (0, i - (m - 1))[i >= m - 1]
         jmx = (n - 1, i)[i < n - 1]
-        for j in range(jmn, jmx+1):
-            output_data[i] += x[j] * h[i-j]
+        for j in range(jmn, jmx + 1):
+            output_data[i] += x[j] * h[i - j]
 
     return output_data
 
@@ -399,7 +398,7 @@ def moire_detector(image: MyImage, m, q=0.7, dt=1):
     buff = []
     for i in range(0, len(image.new_image), m):
         row = image.new_image[i]
-        buff.append(np.diff(row)/dt)
+        buff.append(np.diff(row) / dt)
 
     auto_corr_frequencies = []
     for i in buff:
@@ -524,7 +523,7 @@ def linear_filter(image_in: MyImage, kernel):
 
     for i in range(image.shape[1]):
         for j in range(image.shape[0]):
-            output[j, i] = np.mean((mask * image_padded[j: j+kernel, i: i+kernel]))
+            output[j, i] = np.mean((mask * image_padded[j: j + kernel, i: i + kernel]))
 
     image_in.update_image(np.array(output), '-linearFiltered')
 
@@ -537,7 +536,7 @@ def median_filter(image_in: MyImage, kernel):
 
     for i in range(image.shape[1]):
         for j in range(image.shape[0]):
-            output[j, i] = np.median(image_padded[j: j+kernel, i: i+kernel])
+            output[j, i] = np.median(image_padded[j: j + kernel, i: i + kernel])
 
     image_in.update_image(np.array(output), '-medianFiltered')
 
@@ -545,15 +544,15 @@ def median_filter(image_in: MyImage, kernel):
 def cardiogram(dt):
     n = 1000
     m = 200
-    x = [0]*n
-    h = [0]*m
-    y = [0]*(n+m)
+    x = [0] * n
+    h = [0] * m
+    y = [0] * (n + m)
     alpha = 10
     frequency = 4
     temp_n = n + m - 1
 
     for i in range(len(h)):
-        h[i] = math.sin(2 * math.pi * frequency * (i*dt)) * math.exp(-alpha * (i * dt))
+        h[i] = math.sin(2 * math.pi * frequency * (i * dt)) * math.exp(-alpha * (i * dt))
 
     x[200] = 120
 
@@ -562,126 +561,208 @@ def cardiogram(dt):
     return y
 
 
-# def fourier(input_data):
-#     length = len(input_data)
-#     real = 0.0
-#     imagine = 0.0
-#     for i in range(int(length/2)):
-#         real = 0.0
-#         imagine = 0.0
-#         for j in range(length):
-#             real += input_data[j] * math.cos((2.0 * math.pi * i * j) / length)
-#             imagine += input_data[j] * math.sin((2.0 * math.pi * i * j) / length)
-#         real /= length
-#         imagine /= length
-#
-#     return real, imagine
+def two_d_four_vstroen(data, dt) -> MyFourier:
+    return MyFourier(np.fft.fft2(data), 0, 0, 0, dt)
 
 
-# def fourier_amplitude(input_data):
-#     length = len(input_data)
-#     output_data = []
-#     for i in range(int(length/2)):
-#         real = 0.0
-#         imagine = 0.0
-#         for j in range(length):
-#             real += input_data[j] * math.cos((2.0 * math.pi * i * j) / length)
-#             imagine += input_data[j] * math.sin((2.0 * math.pi * i * j) / length)
-#         real /= length
-#         imagine /= length
-#         y = math.sqrt(real*real + imagine*imagine)
-#         output_data.append(y)
-#
-#     return output_data
-
-
-def twodfour(data):
-    return np.fft.fft2(data)
-
-"""
-@numba.jit(nopython=True)
-def fourier(input_data):
+# @numba.jit(nopython=True)
+def fourier_ampl(input_data):
     length = len(input_data)
     arg = 2.0 * math.pi / length
-    real_values = []
-    complex_values = []
+    # fourier_data = np.zeros(length, dtype=float)
     fourier_data = []
     for i in range(int(length)):
         real = 0.0
         complex = 0.0
         for j in range(length):
-            real += input_data[j] * math.cos(arg * i * j)
-            complex += input_data[j] * math.sin(arg * i * j)
+            real += float(input_data[j] * math.cos(arg * i * j))
+            complex += float(input_data[j] * math.sin(arg * i * j))
         real /= length
         complex /= length
-        fourier_data.append(real + complex)
-        real_values.append(real)
-        complex_values.append(complex)
+        y = np.sqrt(float(real * real) + float(complex * complex))
+        fourier_data.append(y)
     return fourier_data
 
 
-# @numba.jit(nopython=True)
-def fourier_two_dimension(image, dt=1):
-    data = image
-    m_rows = data.shape[0]
-    n_cols = data.shape[1]
-    for i in range(m_rows):
-        stroka = []
-        for j in range(n_cols):
-            stroka.append(data[i][j])
-        four_stroki = fourier(stroka)
-        for j in range(len(four_stroki)-1, int(len(four_stroki)/2), -1):
+@numba.jit(nopython=True)
+def fourier_complex(input_data):
+    length = len(input_data)
+    arg = 2.0 * math.pi / length
+    fourier_data = []
+    for i in range(int(length)):
+        real = 0.0
+        complex = 0.0
+        for j in range(length):
+            real += float(input_data[j] * math.cos(arg * i * j))
+            complex += float(input_data[j] * math.sin(arg * i * j))
+        real /= length
+        complex /= length
+        fourier_data.append(real + complex)
+    return fourier_data
+
+
+# @numba.jit(nopython=False)
+def fourier_two_dimension(image: np.array, mode=1):
+    data = np.zeros((len(image), len(image[0])), dtype=float)
+
+    for i in range(len(data)):
+        for j in range(len(data[0])):
+            data[i, j] = image[i, j]
+
+    n = len(data[0])
+    m = len(data)
+    for i in range(m):
+        print('Текущая строка -', i)
+        stroka = [0] * n
+        for j in range(n):
+            stroka[j] = data[i, j]
+
+        four_stroki = fourier_complex(stroka)
+
+        for j in range(n):
+            data[i, j] = four_stroki[j]
+
+    for col in range(n):
+        print('Текущий столбец -', col)
+        stolbec = [0] * m
+        for j in range(m):
+            stolbec[j] = data[j, col]
+
+        four_stolbca = fourier_complex(stolbec)
+
+        for i in range(m):
+            data[i, col] = four_stolbca[i]
+
+    print('end')
+
+    return data
+
+
+def fourier_two_dimension_ampl(image: np.array, mode=1):
+    data = np.zeros((len(image), len(image[0])), dtype=float)
+
+    for i in range(len(data)):
+        for j in range(len(data[0])):
+            data[i, j] = image[i, j]
+
+    n = len(data[0])
+    m = len(data)
+    for i in range(m):
+        print('Текущая строка -', i)
+        stroka = [0] * n
+        for j in range(n):
+            stroka[j] = data[i, j]
+
+        four_stroki = fourier_ampl(stroka)
+        for j in range(len(four_stroki) - 1, int(len(four_stroki) / 2), -1):
             four_stroki.pop(j)
         rev = four_stroki[::-1]
         four_stroki = rev + four_stroki
-        four_stroki.pop(0)
-        four_stroki.pop(480)
 
-        # @numba.jit(nopython=True)
-        # def foo():
-        #     for k in range(len(four_stroki)):
-        #         for j in range(n_cols):
-        #             data[i][j] = four_stroki[k]
-        #
-        # foo()
+        for j in range(n):
+            data[i, j] = four_stroki[j]
 
-        for j in range(n_cols):
-            data[i][j] = four_stroki[j]
-        print('1')
+    for col in range(n):
+        print('Текущий столбец -', col)
+        stolbec = [0] * m
+        for j in range(m):
+            stolbec[j] = data[j, col]
 
-    print(str(data.shape[0]) + ' ' + str(data.shape[1]))
-
-    for col in range(1, n_cols):
-        stolbec = []
-        for row in range(m_rows):
-            stolbec.append(data[row][col])
-        four_stolbca = fourier(stolbec)
-        #print('1')
-        for i in range(len(four_stolbca)-1, int(len(four_stolbca)/2), -1):
-            four_stolbca.pop(i)
-        #print('1')
+        four_stolbca = fourier_ampl(stolbec)
+        for j in range(len(four_stolbca) - 1, int(len(four_stolbca) / 2), -1):
+            four_stolbca.pop(j)
         rev = four_stolbca[::-1]
         four_stolbca = rev + four_stolbca
-        #print('1')
-        for i in range(m_rows):
-            data[i][col] = four_stolbca[i]
 
-
-
-    # for i in range(1, n_cols):
-    #     stolbec = np.array(data[:, i])
-    #     four_stolbca = fourier(stolbec)
-    #     for j in range(len(four_stolbca)-1, int(len(four_stolbca)/2), -1):
-    #         four_stolbca.pop(j)
-    #     rev = four_stolbca[::-1]
-    #     four_stolbca.append(rev)
-    #     data[:, i] = four_stolbca[0]
+        for i in range(m):
+            data[i, col] = four_stolbca[i]
 
     print('end')
-    #
-    for row in range(m_rows):
-        for col in range(n_cols):
-            data[row][col] = 255 - data[row][col]
 
     return data
-"""
+
+
+def four_inv_two_dimensional(image: np.array):
+    data = image
+    rows = data.shape[0]
+    cols = data.shape[1]
+
+    for col in range(cols):
+        print('Текущий столбец -', col)
+        stolbec = []
+        for row in range(rows):
+            stolbec.append(data[row][col])
+        four_stolbca = four_inverse_one_dimensional(stolbec)
+
+        for i in range(len(four_stolbca)):
+            data[i][col] = four_stolbca[i]
+
+    for i in range(rows):
+        print('Текущая строка -', i)
+        stroka = []
+        for j in range(cols):
+            stroka.append(data[i, j])
+        four_stroki = four_inverse_one_dimensional(stroka)
+
+        for j in range(len(four_stroki)):
+            data[i, j] = four_stroki[j]
+
+    return data
+
+
+def four_inverse_one_dimensional(input_data):
+    data = input_data
+    length = len(input_data)
+    arg = 2.0 * math.pi / length
+    output_data = np.zeros(len(input_data), dtype=float)
+    im = [0] * length
+    re = [0] * length
+    for i in range(length):
+        for j in range(length):
+            re[i] += float(data[j] * math.cos(arg * i * j))
+            im[i] += float(data[j] * math.sin(arg * i * j))
+        output_data[i] = float(re[i] + im[i])
+
+    return output_data
+
+
+def resize_fourier(input_data: np.ndarray, coefficient):
+    fourier_complex_spectrum = fourier_two_dimension(input_data)
+    height_orig = input_data.shape[0]
+    width_orig = input_data.shape[1]
+    height = int(height_orig * coefficient)
+    width = int(width_orig * coefficient)
+    add_zeros_here = np.zeros((height, width), dtype=float)
+    x = 0
+    y = 0
+    for i in range(height):
+        for j in range(width):
+            if (i < height / 2 or i > (height - height_orig / 2 - 1)) \
+                    and (j < width_orig / 2 or j > (width - width_orig / 2 - 1)):
+                add_zeros_here[i, j] = fourier_complex_spectrum[x, y]
+                y += 1
+        y = 0
+        if i < height_orig / 2 or i > (height - height_orig / 2 - 1):
+            x += 1
+
+    output = four_inv_two_dimensional(add_zeros_here)
+
+    return output
+
+
+def substract_images(image1: np.ndarray, image2: np.ndarray):
+    if image1.shape[0] != image2.shape[0] or image1.shape[1] != image2.shape[1]:
+        print('Can\'t compare images with different size')
+        return 0
+    output = np.zeros((image1.shape[0], image1.shape[1]), dtype=float)
+    wdata1 = np.zeros((image1.shape[0], image1.shape[1]), dtype=float)
+    wdata2 = np.zeros((image1.shape[0], image1.shape[1]), dtype=float)
+    for i in range(image1.shape[0]):
+        for j in range(image1.shape[1]):
+            wdata1[i, j] = float(image1[i, j])
+            wdata2[i, j] = float(image2[i, j])
+
+    for i in range(image1.shape[0]):
+        for j in range(image1.shape[1]):
+            output[i, j] = wdata1[i, j] - wdata2[i, j]
+    return output

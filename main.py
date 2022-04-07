@@ -43,13 +43,13 @@ def lab_2():
     c12_xcr_input = read_xcr('images/c12-85v.xcr', 5120, width12, height12)
     c12_xcr_rotated = np.rot90(c12_xcr_input)
     c12_xcr_grayscaled = grayscale(c12_xcr_rotated)
-    save(c12_xcr_grayscaled, 'c12_xcr_grayscaled.jpg')
+    # save(c12_xcr_grayscaled, 'c12_xcr_grayscaled.jpg')
     # new_image(c12_xcr_grayscaled, width12, height12).show()
 
     u0_xcr_input = read_xcr('images/u0.xcr', 5120, width0, height0)
     u0_xcr_rotated = np.rot90(np.array(u0_xcr_input))
     u0_xcr_grayscaled = grayscale(np.array(u0_xcr_rotated))
-    save(u0_xcr_grayscaled, 'u0_xcr_grayscaled.jpg')
+    # save(u0_xcr_grayscaled, 'u0_xcr_grayscaled.jpg')
     # new_image(u0_xcr_grayscaled, height0, width0).show()
 
     # Лабораторная работа №3
@@ -120,25 +120,26 @@ def lab_4():
 def lab_5(image: MyImage):
     hist = histogram_img(image.new_image, image.colors())
     plot.plot(hist[0])
+    plot.title(image.fname + 'Гистограмма')
     plot.savefig(image.dir + 'plots/' + image.fname + 'OrigHist')
     plot.show()
     plot.plot(cdf_calc(hist[0])[0])
+    plot.title(image.fname + 'Функция распределения')
     plot.savefig(image.dir + 'plots/' + image.fname + 'OrigCdf')
     plot.show()
 
     equalize_img(image)
 
-    # image.show_image()
-
     image.save_image()
 
     img = MyImage.load_image('images/', image.new_fname, np.uint8)
-    # img.show_image()
     h = histogram_img(img.new_image, img.colors())
     plot.plot(h[0])
+    plot.title(image.fname + 'Гистограмма после эквализации')
     plot.savefig(img.dir + 'plots/' + img.fname + 'EqHist')
     plot.show()
     plot.plot(cdf_calc(h[0])[0])
+    plot.title(image.fname + 'Функция распределения после эквализации')
     plot.savefig(img.dir + 'plots/' + img.fname + 'EqCdf')
     plot.show()
 
@@ -180,52 +181,127 @@ def lab_6():
 
 
 def lab_7():
-    image = MyImage.load_image('images/lab7/', 'model', np.uint8)
+    image1 = MyImage.load_image('images/lab7/salt_pepper/', 'model', np.uint8)
 
-    salt_and_pepper(image, 20)
-    image.save_image()
+# --------------------------Соль-Перец---------------------------------
+    salt_and_pepper(image1, 20)
+    image1.save_image()
 
-    image_lf = image.copy_image()
-    #image_lf.fname += str('test_lf')
+    image_lf = image1.copy_image()
 
     linear_filter(image_lf, 3)
     image_lf.save_image()
 
-    image_mf = image.copy_image()
-    #image_mf.fname += str('test_mf')
+    image_mf = image1.copy_image()
 
     median_filter(image_mf, 3)
     image_mf.save_image()
+# ---------------------------------------------------------------------
 
+# -------------------------Случайный шум-------------------------------
+    image2 = MyImage.load_image('images/lab7/random_noise/', 'model', np.uint8)
+
+    random_noise(image2, 20)
+    image2.save_image()
+
+    image2_lf = image2.copy_image()
+
+    linear_filter(image2_lf, 3)
+    image2_lf.save_image()
+
+    image2_mf = image2.copy_image()
+
+    median_filter(image2_mf, 3)
+    image2_mf.save_image()
+
+# ---------------------------------------------------------------------
+
+# -----------------------------СП+СШ-----------------------------------
+    image3 = MyImage.load_image('images/lab7/sp_rn/', 'model', np.uint8)
+
+    random_noise(image3, 20)
+    salt_and_pepper(image3, 15)
+    image3.save_image()
+
+    image3_lf = image3.copy_image()
+
+    linear_filter(image3_lf, 3)
+    image3_lf.save_image()
+
+    image3_md = image3.copy_image()
+
+    median_filter(image3_md, 3)
+    image3_md.save_image()
+
+
+# ---------------------------------------------------------------------
 
 def lab_8():
     dt = 0.005
     cardio = cardiogram(dt)
     plot.plot(cardio)
     plot.title("Cardiogram")
+    plot.savefig('images/lab8/Cardiogram')
     plot.show()
 
     four = MyFourier.fourier_one_dimension(cardio, dt)
     plot.plot(four.amplitude())
     plot.title("Amplitude")
+    plot.savefig('images/lab8/CardiogramAmplitude')
     plot.show()
 
     four_back = four.four_inverse_one_dimensional()
     plot.plot(four_back)
     plot.title("Inverse fourier")
+    plot.savefig('images/lab8/CardiogramInverseFourier')
     plot.show()
-    image = MyImage.load_image('images/', 'test', np.uint8)
-    power_grad(image.new_image, 2, 3)
-    twod = four.fourier_two_dimension(four, image.new_image)
-    image.update_image(np.array(twod), '-twoD')
-    image.save_image()
 
     image = MyImage.load_image('images/', 'grace', np.uint8)
-    twod2 = twodfour(image.new_image)
-    twod2 = np.fft.ifft2(twod)
-    image.update_image(np.array(twod2), '-twoD_vstroen_back')
+    img_height = image.new_image.shape[0]
+    img_width = image.new_image.shape[1]
+
+
+    img = image
+    img.update_image(power_grad(fourier_two_dimension_ampl(image.new_image), 5, 5), '-FOUR_AMPLITUDE_IMAGE')
+    img.save_image()
+
+    image_fourier_inverse_transform = four_inv_two_dimensional(image_fourier_transform)
+    grayscaled = grayscale(image_fourier_inverse_transform)
+    image.update_image(grayscaled, '-fourierAndBack')
     image.save_image()
 
+    resize_f = resize_fourier(image.new_image, 1.3)
+    image.update_image(resize_f, '-2dFourierResized')
+    image.save_image()
+
+    resize_f = MyImage.load_image('images/', 'grace-3-2dFourierResized', np.uint8)
+    resize_near = resize(image.new_image, 1.3, 'nearest', 'increase', img_width, img_height)
+    save(resize_near, 'images/lab8/resizeNear.jpg')
+    resize_bilin = resize(image.new_image, 1.3, 'bilinear', 'increase', img_width, img_height)
+    save(resize_bilin, 'images/lab8/resizeBilin.jpg')
+    orig_res = MyImage.load_image('images/lab8/', 'grace-res', np.uint8)
+    img_near = MyImage.load_image('images/lab8/', 'resizeNear', np.uint8)
+    img_bilin = MyImage.load_image('images/lab8/', 'resizeBilin', np.uint8)
+    # gs = grayscale(res)
+
+    diff = MyImage('images/lab8/', 'diffImg', 0, np.uint8)
+    buff = substract_images(orig_res.new_image, resize_f.new_image)
+    buff = gamma_correction(buff, 1, 0.4)
+    buff = grayscale(buff)
+    diff.update_image(buff, '-fourier')
+    diff.save_image()
+
+    buff = substract_images(orig_res.new_image, img_near.new_image)
+    buff = gamma_correction(buff, 1, 0.4)
+    buff = grayscale(buff)
+    diff.update_image(buff, '-nearest')
+    diff.save_image()
+
+    buff = substract_images(orig_res.new_image, img_bilin.new_image)
+    buff = gamma_correction(buff, 1, 0.4)
+    buff = grayscale(buff)
+    diff.update_image(buff, '-bilinear')
+    diff.save_image()
 
 
 if __name__ == '__main__':
@@ -248,22 +324,14 @@ if __name__ == '__main__':
     #     MyImage.load_binary('images/', 'c12-85v', '>H', 1024, 1024, 5120)
     # ]
     #
-    # percent = 100 / len(images)
-    # completed = percent
     # for image in images:
     #     lab_5(image)
-    #     print(str(completed) + '% completed')
-    #     completed += percent
     #
-    # percent = 100 / len(xcrs)
-    # completed = percent
     # for image in xcrs:
     #     image.rotate90_ccw()
     #     negative(image)
     #
     #     lab_5(image)
-    #     print(str(completed) + '% completed')
-    #     completed += percent
 
     # lab_6()
     # lab_7()
