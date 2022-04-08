@@ -1,4 +1,6 @@
 import math
+
+import numba
 import numpy as np
 
 
@@ -45,15 +47,14 @@ def lpw_filter(f, dt, m, is_neg_allowed=True):
             lpw_flipped[:len(lpw) - 1] + lpw]
 
 
-
 def hpw_filter(f, dt, m):
-    values = lpw_filter(f, dt, m)
+    values = lpw_filter(f, dt, m)[1]
 
-    for i in range(len(values[0])):
+    for i in range(len(values)):
         if i == m:
-            values[1][i] = 1.0 - values[1][i]
+            values[i] = 1.0 - values[i]
         else:
-            values[1][i] = -values[1][i]
+            values[i] = -values[i]
 
     return values
 

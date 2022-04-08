@@ -304,6 +304,51 @@ def lab_8():
     diff.save_image()
 
 
+def lab_10_template():
+    image = MyImage.load_image('images/lab10/', 'model', np.uint8)
+    pixels = image.new_image
+    # пороговая фильтрация
+    for i in range(pixels.shape[0]):
+        for j in range(pixels.shape[1]):
+            if pixels[i, j] < 200:
+                pixels[i, j] = 0
+            else:
+                pixels[i, j] = 255
+
+    # image.update_image(pixels, '-porogFilter')
+    # image.save_image()
+    f = 6  # 15, 6!
+    m = 16  # 64, 16
+    dx = 1 / image.new_image.shape[1]
+    porog = 12 # 25!
+
+    control_mass = filters.lpw_filter(f, dx, m)[1]
+    # control_mass = filters.hpw_filter(f, dx, m)
+    conv_img = convolution_image(pixels, control_mass, m)
+    # image.update_image(conv_img, '-convolved')
+    # image.save_image()
+    pix = conv_img - pixels  # swap
+    image.update_image(pix, '-substracted')
+    hist = histogram_img(image.new_image, image.colors())[0]
+    plot.plot(hist)
+    porog = 30
+    plot.show()
+    image.save_image()
+
+    # pix = grayscale(pix)
+
+    # пороговая фильтрация для чётких контуров
+    for i in range(pixels.shape[0]):
+        for j in range(pixels.shape[1]):
+            if pix[i, j] > porog:
+                pix[i, j] = 255
+            else:
+                pix[i, j] = 0
+    image.update_image(pix, '-porogContur-' + str(f) + '-' + str(m) + '-' + str(porog))
+    # median_filter(image, 3)
+    # image.update_image(pix, '-contured')
+    image.save_image()
+
 if __name__ == '__main__':
     # lab_1()  # ЛР №3 внутри
     # lab_2()  # ЛР №3 внутри
@@ -335,5 +380,6 @@ if __name__ == '__main__':
 
     # lab_6()
     # lab_7()
-    lab_8()
+    # lab_8()
+    lab_10_template()
 

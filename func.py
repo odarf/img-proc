@@ -272,7 +272,7 @@ def histogram_img(image: np.ndarray, colors: int):
     hist = [0] * colors
     for x in range(image.shape[0]):
         for y in range(image.shape[1]):
-            i = image[x, y]
+            i = int(image[x, y])
             hist[i] += 1
 
     return np.array(hist), '-histogram'
@@ -314,6 +314,7 @@ def diff(input_data, dx=1):
     return np.diff(input_data) / dx
 
 
+# @numba.jit(nopython=True)
 def convolution(x, h):
     n = len(x)
     m = len(h)
@@ -327,6 +328,17 @@ def convolution(x, h):
             output_data[i] += x[j] * h[i - j]
 
     return output_data
+
+
+# @numba.jit(nopython=True)
+def convolution_image(image, control_signal, m):
+    height = image.shape[0]
+    width = image.shape[1]
+    output = []
+    for i in range(height):
+        temp = convolution(image[i], control_signal)
+        output.append(temp[m:(width+m)])
+    return output
 
 
 @numba.jit(nopython=True)
