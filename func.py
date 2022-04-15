@@ -778,3 +778,46 @@ def substract_images(image1: np.ndarray, image2: np.ndarray):
         for j in range(image1.shape[1]):
             output[i, j] = wdata1[i, j] - wdata2[i, j]
     return output
+
+
+def gradient(image, axis):
+    height = image.shape[0]
+    width = image.shape[1]
+    new_image = []
+    if axis == 'row':
+        for row in range(height):
+            new_row = []
+            for col in range(width-1):
+                new_row.append(int(image[row][col+1]) - int(image[row][col]))
+            new_image.append(new_row)
+
+        gradient = np.array(new_image).reshape(height, width - 1)
+    else:
+        for col in range(width):
+            new_col = []
+            for row in range(height-1):
+                new_col.append(int(image[row+1][col]) - int(image[row][col]))
+            new_image.append(new_col)
+        new_image = np.array(new_image).reshape(width, height-1)
+        new_image = new_image.transpose()
+
+        gradient = np.array(new_image).reshape(height-1, width)
+
+    return gradient
+
+
+def laplasian(m):
+    height = m.shape[0]
+    width = m.shape[1]
+
+    new_image = []
+    for row in range(1, height-1):
+        new_row = []
+        for col in range(1, width - 1):
+            new_row.append(
+                int(m[row+1][col]) + int(m[row-1][col]) + int(m[row][col+1]) + int(m[row][col-1]) - int(4 * m[row][col])
+            )
+        new_image.append(new_row)
+    output = np.array(new_image).reshape(height-2, width-2)
+
+    return output

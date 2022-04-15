@@ -349,6 +349,71 @@ def lab_10_template():
     # image.update_image(pix, '-contured')
     image.save_image()
 
+
+def lab_11_gradient():
+    image = MyImage.load_image('images/lab10/', 'model-2', np.uint8)
+    height = image.new_image.shape[0]
+    width = image.new_image.shape[1]
+    func.median_filter(image, 3)
+    # histo = histogram_img(image.new_image, image.colors())[0]
+    # plot.plot(histo)
+    # plot.title(f'Гистограмма')
+    # plot.show()
+
+    for row in range(height):
+        for col in range(width):
+            if 190 < image.new_image[row][col] < 250:
+                image.new_image[row][col] = 255
+            else:
+                image.new_image[row][col] = 0
+
+    grad_x = gradient(image.new_image, 'row')
+    grad_y = gradient(image.new_image, 'column')
+    grad_matrix = []
+    for row in range(height-1):
+        new_row = []
+        for col in range(width-1):
+            new_row.append(np.sqrt(grad_x[row][col] ** 2 + grad_y[row][col] ** 2))
+        grad_matrix.append(new_row)
+
+    grad_matrix = np.array(grad_matrix).reshape(height-1, width-1)
+    foo = new_image(grad_matrix, width-1, height-1)
+
+    #foo.show()
+
+    image.update_image(foo, '-11gradMatrix')
+    image.save_image()
+
+
+def lab_11_laplasian():
+    image = MyImage.load_image('images/lab10/', 'model-2', np.uint8)
+    height = image.new_image.shape[0]
+    width = image.new_image.shape[1]
+    # func.median_filter(image, 3)
+    pixels = np.array(image.new_image).reshape(height, width)
+    for row in range(height):
+        for col in range(width):
+            if 190 < pixels[row][col] < 250:
+                pixels[row][col] = 255
+            else:
+                pixels[row][col] = 0
+    # image.update_image(pixels, '-binarized')
+
+    laplas = laplasian(pixels)
+    image.update_image(laplas, '-11laplas')
+    height = image.new_image.shape[0]
+    width = image.new_image.shape[1]
+    pixels = np.array(image.new_image).reshape(height, width)
+    # for row in range(height):
+    #     for col in range(width):
+    #         if 0 < pixels[row][col] < 255:
+    #             pixels[row][col] = 255
+    #         else:
+    #             pixels[row][col] = 0
+    # foo = new_image(laplas, width - 2, height - 2)
+    image.update_image(pixels, '-11laplasMatrix')
+    image.save_image()
+
 if __name__ == '__main__':
     # lab_1()  # ЛР №3 внутри
     # lab_2()  # ЛР №3 внутри
@@ -381,5 +446,7 @@ if __name__ == '__main__':
     # lab_6()
     # lab_7()
     # lab_8()
-    lab_10_template()
+    # lab_10_template()
+    # lab_11_gradient()
+    lab_11_laplasian()
 
