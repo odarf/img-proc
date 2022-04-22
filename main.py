@@ -414,6 +414,39 @@ def lab_11_laplasian():
     image.update_image(pixels, '-11laplasMatrix')
     image.save_image()
 
+
+def lab_12():
+    image = MyImage.load_image('images/lab12/', 'model-2', np.uint8)
+    height = image.new_image.shape[0]
+    width = image.new_image.shape[1]
+    pix = image.new_image
+
+    for row in range(height):
+        for col in range(width):
+            if pix[row, col] < 200:
+                pix[row, col] = 0
+            else:
+                pix[row, col] = 255
+
+    image.update_image(pix, '-porogovoe')
+    median_filter(image, 3)
+    pix = image.new_image
+
+    pix_dil = dilatation(pix, 3, 3)  # обосновать выбор размера матрицы
+    # pix_eros = erosion(pix, 3, 3)
+    pix_eros = dilatation(pix_dil, 3, 3)
+
+    dilatation_result = pix_dil - pix
+    image.update_image(dilatation_result, '-dilatated-3x3')
+    image.save_image()
+
+    erosion_result = pix - pix_eros
+    image.update_image(erosion_result, '-erosed-dilateted-3x3')
+    image.save_image()
+
+
+
+
 if __name__ == '__main__':
     # lab_1()  # ЛР №3 внутри
     # lab_2()  # ЛР №3 внутри
@@ -448,5 +481,6 @@ if __name__ == '__main__':
     # lab_8()
     # lab_10_template()
     # lab_11_gradient()
-    lab_11_laplasian()
+    # lab_11_laplasian()
+    lab_12()
 

@@ -821,3 +821,70 @@ def laplasian(m):
     output = np.array(new_image).reshape(height-2, width-2)
 
     return output
+
+
+def erosion(image, mask_x, mask_y):
+    er_mask = np.full((mask_y, mask_x), 255)
+    height = image.shape[0]
+    width = image.shape[1]
+
+    new_image = []
+    for row in range(height):
+        new_row = []
+        for col in range(width):
+            if (row < (mask_y // 2)) or (row >= height - (mask_y // 2)) \
+                    or (col < (mask_x // 2)) or (col >= width - (mask_x // 2)):
+                new_row.append(image[row][col])
+            else:
+                check_sum = 0
+                for mask_row in range(mask_y):
+                    for mask_col in range(mask_x):
+                        if image[(row - (mask_y // 2) + mask_row), (col - (mask_x // 2) + mask_col)] != \
+                                er_mask[mask_row][mask_col]:
+                            check_sum += 1
+                if check_sum == mask_y * mask_x:
+                    new_row.append(image[row][col])
+                else:
+                    new_row.append(0)
+
+        new_image.append(new_row)
+
+    new_height = len(new_image)
+    new_width = len(new_image[0])
+
+    new_image = np.array(new_image).reshape(new_height, new_width)
+    return new_image
+
+
+def dilatation(image, mask_x, mask_y):
+    er_mask = np.full((mask_y, mask_x), 255)
+    height = image.shape[0]
+    width = image.shape[1]
+
+    new_image = []
+    for row in range(height):
+        new_row = []
+        for col in range(width):
+            if (row < (mask_y // 2)) or (row >= height - (mask_y // 2)) \
+                    or (col < (mask_x // 2)) or (col >= width - (mask_x // 2)):
+                new_row.append(image[row][col])
+            else:
+                check_sum = 0
+                for mask_row in range(mask_y):
+                    for mask_col in range(mask_x):
+                        if image[(row - (mask_y // 2) + mask_row), (col - (mask_x // 2) + mask_col)] != \
+                            er_mask[mask_row][mask_col]:
+                            check_sum += 1
+                if check_sum == mask_y * mask_x:
+                    new_row.append(0)
+                else:
+                    new_row.append(255)
+
+        new_image.append(new_row)
+
+    new_height = len(new_image)
+    new_width = len(new_image[0])
+
+    new_image = np.array(new_image).reshape(new_height, new_width)
+
+    return new_image
