@@ -24,6 +24,38 @@ def read_image_gray(file):
     return image
 
 
+def read_bin(file, format, width, height) -> MyImage:
+    d = {'b': 1, 'B': 1, 'h': 2, 'H': 2, 'i': 4, 'I': 4, 'l': 4, 'L': 4,
+         'q': 8, 'Q': 8, 'f': 4, 'd': 8}
+    with open(file, "rb") as binary_file:
+        figures = []
+
+        data = binary_file.read()
+        for i in range(0, len(data), d[format]):
+            elem = struct.unpack(format, data[i:i + d[format]])
+            figures.append(elem[0])
+
+        data = np.reshape(figures, (height, width))
+        return MyImage()
+
+
+def dat_image_binary_read(folder, name, extension, width, height, format) -> MyImage:
+    d = {'b': 1, 'B': 1, 'h': 2, 'H': 2, 'i': 4, 'I': 4, 'l': 4, 'L': 4,
+         'q': 8, 'Q': 8, 'f': 4, 'd': 8}
+    file = folder + name + extension
+    with open(file, "rb") as binary_file:
+        figures = []
+
+        data = binary_file.read()
+        for i in range(0, len(data), d[format]):
+            elem = struct.unpack(format, data[i:i + d[format]])
+            figures.append(elem[0])
+
+        data = np.reshape(figures, (height, width))
+    # return MyImage(folder, name, extension, data, 'f')
+    return MyImage(folder, name, data, np.uint8)
+
+
 def read_xcr(file, offset, width, height):
     """
     :param file: путь до файла
@@ -293,7 +325,7 @@ def eq(image: np.ndarray, cdf: np.ndarray) -> np.ndarray:
 
     for x in range(image.shape[0]):
         for y in range(image.shape[1]):
-            output_data[x, y] = round((cdf[output_data[x, y]] - cdf_min) * 255 /
+            output_data[x, y] = round((cdf[output_data[x, y]] - cdf_min) * 255.0 /
                                       (image.shape[0] * image.shape[1] - 1)
                                       )
 
@@ -306,8 +338,7 @@ def equalize_img(image: MyImage):
     cdf = cdf_calc(hist)[0]
 
     eq_img = eq(image.new_image, cdf)
-    image.update_image(eq_img, '-cdf-normed')
-    # return output_data
+    image.update_image(eq_img, '-cdf-equalized')
 
 
 def diff(input_data, dx=1):
@@ -337,7 +368,7 @@ def convolution_image(image, control_signal, m):
     output = []
     for i in range(height):
         temp = convolution(image[i], control_signal)
-        output.append(temp[m:(width+m)])
+        output.append(temp[m:(width + m)])
     return output
 
 
@@ -780,30 +811,15 @@ def substract_images(image1: np.ndarray, image2: np.ndarray):
     return output
 
 
-def gradient(image, axis):
-    height = image.shape[0]
-    width = image.shape[1]
-    new_image = []
-    if axis == 'row':
-        for row in range(height):
-            new_row = []
-            for col in range(width-1):
-                new_row.append(int(image[row][col+1]) - int(image[row][col]))
-            new_image.append(new_row)
+def gradient(image: MyImage):
+    mask = np.array([
+            [-1, -1, -1],
+            [-1, 8, -1],
+            [-1, -1, -1]
+        ])
 
-        gradient = np.array(new_image).reshape(height, width - 1)
-    else:
-        for col in range(width):
-            new_col = []
-            for row in range(height-1):
-                new_col.append(int(image[row+1][col]) - int(image[row][col]))
-            new_image.append(new_col)
-        new_image = np.array(new_image).reshape(width, height-1)
-        new_image = new_image.transpose()
-
-        gradient = np.array(new_image).reshape(height-1, width)
-
-    return gradient
+    img = convolution_image(image.new_image, mask, 32)
+    image.update_image(img, '-gradient')
 
 
 def laplasian(m):
@@ -811,14 +827,15 @@ def laplasian(m):
     width = m.shape[1]
 
     new_image = []
-    for row in range(1, height-1):
+    for row in range(1, height - 1):
         new_row = []
         for col in range(1, width - 1):
             new_row.append(
-                int(m[row+1][col]) + int(m[row-1][col]) + int(m[row][col+1]) + int(m[row][col-1]) - int(4 * m[row][col])
+                int(m[row + 1][col]) + int(m[row - 1][col]) + int(m[row][col + 1]) + int(m[row][col - 1]) - int(
+                    4 * m[row][col])
             )
         new_image.append(new_row)
-    output = np.array(new_image).reshape(height-2, width-2)
+    output = np.array(new_image).reshape(height - 2, width - 2)
 
     return output
 
@@ -873,7 +890,7 @@ def dilatation(image, mask_x, mask_y):
                 for mask_row in range(mask_y):
                     for mask_col in range(mask_x):
                         if image[(row - (mask_y // 2) + mask_row), (col - (mask_x // 2) + mask_col)] != \
-                            er_mask[mask_row][mask_col]:
+                                er_mask[mask_row][mask_col]:
                             check_sum += 1
                 if check_sum == mask_y * mask_x:
                     new_row.append(0)
@@ -888,3 +905,110 @@ def dilatation(image, mask_x, mask_y):
     new_image = np.array(new_image).reshape(new_height, new_width)
 
     return new_image
+
+
+def data_read(folder, name, ext, dtype, width, height) -> np.ndarray:
+    with open(folder + name + ext, mode='rb') as file:
+        data = np.fromfile(file, dtype=dtype).reshape(height, width)
+    return np.array(data)
+
+
+def re_im(data: np.array, N):
+    re = [0 for i in range(N)]
+    im = [0 for i in range(N)]
+    for i in range(N):
+        for j in range(N):
+            re[i] += (data[j] * np.cos((2.0 * np.pi * i * j) / N))
+            im[i] += (data[j] * np.sin((2.0 * np.pi * i * j) / N))
+    return re, im
+
+
+
+def fix_blur(image: np.array, kernel: np.ndarray, alpha: float):
+    width, height = len(image[0]), len(image)
+    kernel_len = len(kernel[0])  # длина ядра смазывающей функции
+    control_len = len(kernel)
+    kernel = kernel[0].tolist()
+
+
+    # добавляю нули в конец массива ядра
+    for i in range(width - kernel_len):
+        kernel.append(0)
+        # kernel[0].append(0)
+
+    # kernel_fourier = fourier_ampl(kernel)
+    re_h, im_h = re_im(kernel, width)
+
+    image_spectrum = []
+    image_spectrum_re, image_spectrum_im = [], []
+    module = []
+    output_data = []
+    step = 0
+    # построчное преобразование фурье
+    for row in range(height):
+        temp = fourier_ampl(image[row])
+        step += 1
+
+        image_spectrum.append(temp)
+        re, im = re_im(image[row], width)
+
+        # комплексное деление строчки изображения и ядра функции
+        # alpha = 0.005????
+        r_re, r_im = [], []
+        for i in range(width):
+            # print('текущий индекс ', i)
+            correction_factor = (re_h[i] ** 2 + im_h[i] ** 2) + alpha  # поправочный множитель
+            r_re.append((re_h[i] * re[i] + im_h[i] * im[i]) / correction_factor)
+            r_im.append((re_h[i] * im[i] - im_h[i] * re[i]) / correction_factor)
+
+        # вычисляю модуль отношения комплексных величин
+        module_temp = []
+        for col in range(width):
+            module_temp.append(r_re[col] + r_im[col])
+
+        module.append(module_temp)
+        output_data.append(four_inverse_one_dimensional(module[row]))
+
+    return output_data
+
+
+def otsu_threshold(image: MyImage, size) -> int:
+    min = image.new_image.min()
+    max = image.new_image.max()
+    width, height = len(image.new_image[0]), len(image.new_image)
+
+    hist_size = round(max - min + 1)
+    hist = [0 for i in range(hist_size)]
+
+    for col in range(width):
+        for row in range(height):
+            index = int(image.new_image[row, col] - min)
+            hist[index] += 1
+
+    m = 0  # сумма высот всех бинов, домноженных на положение их середины
+    n = 0  # сумма высот всех бинов
+
+    for i in range(0, int(max-min+1)):
+        m += i * hist[i]
+        n += hist[i]
+
+    max_sigma = -1.0
+    threshold = 0
+    alpha1 = 0
+    beta1 = 0
+
+    for i in range(int(max - min)):
+        alpha1 += i * hist[i]
+        beta1 += hist[i]
+
+        w1 = float(float(beta1) / n)
+        a = float(float(alpha1 / beta1) - float((m-alpha1) / (n - beta1)))
+
+        sigma = float(w1 * (1 - w1) * a * a)
+
+        if sigma > max_sigma:
+            max_sigma = sigma
+            threshold = i
+
+    threshold += min
+    return threshold

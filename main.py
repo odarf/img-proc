@@ -183,7 +183,7 @@ def lab_6():
 def lab_7():
     image1 = MyImage.load_image('images/lab7/salt_pepper/', 'model', np.uint8)
 
-# --------------------------Соль-Перец---------------------------------
+    # --------------------------Соль-Перец---------------------------------
     salt_and_pepper(image1, 20)
     image1.save_image()
 
@@ -196,9 +196,9 @@ def lab_7():
 
     median_filter(image_mf, 3)
     image_mf.save_image()
-# ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
 
-# -------------------------Случайный шум-------------------------------
+    # -------------------------Случайный шум-------------------------------
     image2 = MyImage.load_image('images/lab7/random_noise/', 'model', np.uint8)
 
     random_noise(image2, 20)
@@ -214,9 +214,9 @@ def lab_7():
     median_filter(image2_mf, 3)
     image2_mf.save_image()
 
-# ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
 
-# -----------------------------СП+СШ-----------------------------------
+    # -----------------------------СП+СШ-----------------------------------
     image3 = MyImage.load_image('images/lab7/sp_rn/', 'model', np.uint8)
 
     random_noise(image3, 20)
@@ -259,7 +259,6 @@ def lab_8():
     image = MyImage.load_image('images/', 'grace', np.uint8)
     img_height = image.new_image.shape[0]
     img_width = image.new_image.shape[1]
-
 
     img = image
     img.update_image(power_grad(fourier_two_dimension_ampl(image.new_image), 5, 5), '-FOUR_AMPLITUDE_IMAGE')
@@ -304,115 +303,196 @@ def lab_8():
     diff.save_image()
 
 
-def lab_10_template():
-    image = MyImage.load_image('images/lab10/', 'model', np.uint8)
-    pixels = image.new_image
-    # пороговая фильтрация
-    for i in range(pixels.shape[0]):
-        for j in range(pixels.shape[1]):
-            if pixels[i, j] < 200:
-                pixels[i, j] = 0
-            else:
-                pixels[i, j] = 255
+def lab_9():
+    kernD76_f4 = data_read('images/lab9/', 'kernD76_f4', '.dat', "float32", 76, 1)
+    blur307x221D = dat_image_binary_read('images/lab9/', 'blur307x221D', '.dat', 307, 221, format='f')
+    blur307x221D_N = dat_image_binary_read('images/lab9/', 'blur307x221D_N', '.dat', 307, 221, format='f')
 
-    # image.update_image(pixels, '-porogFilter')
-    # image.save_image()
-    f = 6  # 15, 6!
-    m = 16  # 64, 16
-    dx = 1 / image.new_image.shape[1]
-    porog = 12 # 25!
+    kernel_len = len(kernD76_f4)
+    width, height = 307, 221
+    # blur307x221D_fix = fix_blur(blur307x221D.new_image, kernD76_f4, 0.0001)
+    # blur307x221D.update_image(grayscale(blur307x221D_fix), 'decoTEST')
+    # blur307x221D.save_image()
+    blur307x221D_N_fix = fix_blur(blur307x221D_N.new_image, kernD76_f4, 15)
+    blur307x221D_N.update_image(grayscale(blur307x221D_N_fix), 'decoTEST')
+    blur307x221D_N.save_image()
 
-    control_mass = filters.lpw_filter(f, dx, m)[1]
-    # control_mass = filters.hpw_filter(f, dx, m)
-    conv_img = convolution_image(pixels, control_mass, m)
-    # image.update_image(conv_img, '-convolved')
-    # image.save_image()
-    pix = conv_img - pixels  # swap
-    image.update_image(pix, '-substracted')
+    # save(foo, 'decoTEST.jpg')
+
+
+def lab_9_beautify():
+    image = MyImage.load_image('images/lab9/', 'blur307x221D_N-1decoTEST', np.uint8)
+    width, height = 307, 221
+    # linear_filter(image, 3)
+    median_filter(image, 3)
     hist = histogram_img(image.new_image, image.colors())[0]
     plot.plot(hist)
-    porog = 30
     plot.show()
+    pix = image.new_image
+    test_porog = otsu_threshold(image, (307 * 221))
+    print(test_porog)
+    for row in range(height):
+        for col in range(width):
+            if pix[row, col] < test_porog:
+                pix[row, col] = 0
+            else:
+                pix[row, col] = 255
+
+    image.update_image(pix, '-otsuTreshold')
     image.save_image()
 
-    # pix = grayscale(pix)
+
+def lab_10_template():
+    image = MyImage.load_image('images/lab10/', 'model-noize-linearFiltered', np.uint8)
+    pixels = image.new_image
+    f = 32  # 6 - низких,
+    m = 64  # 16 - низких,
+    dx = 1 / image.new_image.shape[1]
+
+    # пороговая фильтрация
+    porog1 = 200
+    print('porog1 = ', porog1)
+    image.treshold(porog1)
+
+    # control_mass = filters.lpw_filter(f, dx, m)[1]
+    control_mass = filters.hpw_filter(f, dx, m)
+
+    conv_img = convolution_image(pixels, control_mass, m)
+    image.update_image(conv_img, '-convolved')
+    # image.update_image(conv_img, '-convolved')
+    # image.save_image()
+
+    # pix = conv_img - pixels  # swap
+    # pix = conv_img - pixels  # lpw
+    # image.update_image(pix, '-convolved-substracted')
+    ## hist = histogram_img(image.new_image, image.colors())[0]
+    ## plot.plot(hist)
+    ## plot.show()
+
+    pix = image.new_image
+    porog2 = 60
+
+    # porog2 = otsu_threshold(image, int(image.width * image.height))
+    print('porog2 = ', porog2)
 
     # пороговая фильтрация для чётких контуров
-    for i in range(pixels.shape[0]):
-        for j in range(pixels.shape[1]):
-            if pix[i, j] > porog:
-                pix[i, j] = 255
-            else:
-                pix[i, j] = 0
-    image.update_image(pix, '-porogContur-' + str(f) + '-' + str(m) + '-' + str(porog))
-    # median_filter(image, 3)
-    # image.update_image(pix, '-contured')
+    image.treshold(porog2)
+    image.update_image(image.new_image,
+                       '-porogContur-' + 'f' + str(f) + '-' + 'm' + str(m) + '-' + str(porog1) + '-' + str(porog2))
     image.save_image()
 
 
-def lab_11_gradient():
-    image = MyImage.load_image('images/lab10/', 'model-2', np.uint8)
-    height = image.new_image.shape[0]
-    width = image.new_image.shape[1]
-    func.median_filter(image, 3)
-    # histo = histogram_img(image.new_image, image.colors())[0]
-    # plot.plot(histo)
-    # plot.title(f'Гистограмма')
-    # plot.show()
+def lab_11_gradient(image: MyImage, direction='default'):
+    th1, th2 = 190, 250
+    image1 = MyImage.load_image('images/lab11/', 'model', np.uint8)
+    image2 = MyImage.load_image('images/lab11/', 'model-noize', np.uint8)
+    image3 = MyImage.load_image('images/lab11/', 'model-noize-linearFiltered', np.uint8)
+    image4 = MyImage.load_image('images/lab11/', 'model-noize-medianFiltered', np.uint8)
 
-    for row in range(height):
-        for col in range(width):
-            if 190 < image.new_image[row][col] < 250:
-                image.new_image[row][col] = 255
-            else:
-                image.new_image[row][col] = 0
+    masks = [np.array([
+            [0,  0, 0],
+            [0, -1, 0],
+            [0,  1, 0]
+        ]), np.array([
+            [0,  0, 0],
+            [0, -1, 1],
+            [0,  0, 0]
+        ])
+    ]
 
-    grad_x = gradient(image.new_image, 'row')
-    grad_y = gradient(image.new_image, 'column')
-    grad_matrix = []
-    for row in range(height-1):
-        new_row = []
-        for col in range(width-1):
-            new_row.append(np.sqrt(grad_x[row][col] ** 2 + grad_y[row][col] ** 2))
-        grad_matrix.append(new_row)
+    masks_vh = [np.array([
+            [-1, -2, -1],
+            [ 0,  0,  0],
+            [ 1,  2,  1]
+        ]), np.array([
+            [-1, 0, 1],
+            [-2, 0, 2],
+            [-1, 0, 1]
+        ])
+    ]
 
-    grad_matrix = np.array(grad_matrix).reshape(height-1, width-1)
-    foo = new_image(grad_matrix, width-1, height-1)
+    masks_d = [np.array([
+        [0,   1, 2],
+        [-1,  0, 1],
+        [-2, -1, 0]
+    ]), np.array([
+        [-2, -1, 0],
+        [-1,  0, 1],
+        [ 0,  1, 2]
+    ])
+    ]
 
-    #foo.show()
+    image1.treshold_inrange(th1, th2)
+    image2.treshold_inrange(th1, th2)
+    image3.treshold_inrange(th1, th2)
+    image4.treshold_inrange(th1, th2)
 
-    image.update_image(foo, '-11gradMatrix')
-    image.save_image()
+    if direction == 'default':
+        image1.add_mask(masks)
+        image2.add_mask(masks)
+        image3.add_mask(masks)
+        image4.add_mask(masks)
+        image1.update_image(image1.new_image, '-gradient')
+        image2.update_image(image2.new_image, '-gradient')
+        image3.update_image(image3.new_image, '-gradient')
+        image4.update_image(image4.new_image, '-gradient')
+    elif direction == 'vh':
+        image1.add_mask(masks_vh)
+        image2.add_mask(masks_vh)
+        image3.add_mask(masks_vh)
+        image4.add_mask(masks_vh)
+        image1.update_image(image1.new_image, '-gradientSobel-VH')
+        image2.update_image(image2.new_image, '-gradientSobel-VH')
+        image3.update_image(image3.new_image, '-gradientSobel-VH')
+        image4.update_image(image4.new_image, '-gradientSobel-VH')
+    elif direction == 'd':
+        image1.add_mask(masks_d)
+        image2.add_mask(masks_d)
+        image3.add_mask(masks_d)
+        image4.add_mask(masks_d)
+        image1.update_image(image1.new_image, '-gradientSobel-D')
+        image2.update_image(image2.new_image, '-gradientSobel-D')
+        image3.update_image(image3.new_image, '-gradientSobel-D')
+        image4.update_image(image4.new_image, '-gradientSobel-D')
+
+    image1.save_image()
+    image2.save_image()
+    image3.save_image()
+    image4.save_image()
 
 
-def lab_11_laplasian():
-    image = MyImage.load_image('images/lab10/', 'model-2', np.uint8)
-    height = image.new_image.shape[0]
-    width = image.new_image.shape[1]
-    # func.median_filter(image, 3)
-    pixels = np.array(image.new_image).reshape(height, width)
-    for row in range(height):
-        for col in range(width):
-            if 190 < pixels[row][col] < 250:
-                pixels[row][col] = 255
-            else:
-                pixels[row][col] = 0
-    # image.update_image(pixels, '-binarized')
+def lab_11_laplasian(iamge: MyImage):
+    th1, th2 = 190, 250
+    image1 = MyImage.load_image('images/lab11/', 'model', np.uint8)
+    image2 = MyImage.load_image('images/lab11/', 'model-noize', np.uint8)
+    image3 = MyImage.load_image('images/lab11/', 'model-noize-linearFiltered', np.uint8)
+    image4 = MyImage.load_image('images/lab11/', 'model-noize-medianFiltered', np.uint8)
 
-    laplas = laplasian(pixels)
-    image.update_image(laplas, '-11laplas')
-    height = image.new_image.shape[0]
-    width = image.new_image.shape[1]
-    pixels = np.array(image.new_image).reshape(height, width)
-    # for row in range(height):
-    #     for col in range(width):
-    #         if 0 < pixels[row][col] < 255:
-    #             pixels[row][col] = 255
-    #         else:
-    #             pixels[row][col] = 0
-    # foo = new_image(laplas, width - 2, height - 2)
-    image.update_image(pixels, '-11laplasMatrix')
-    image.save_image()
+    mask = [np.array([
+        [-1, -1, -1],
+        [-1,  8, -1],
+        [-1, -1, -1]
+    ])]
+
+    image1.treshold_inrange(th1, th2)
+    image2.treshold_inrange(th1, th2)
+    image3.treshold_inrange(th1, th2)
+    image4.treshold_inrange(th1, th2)
+
+    image1.add_mask(mask)
+    image2.add_mask(mask)
+    image3.add_mask(mask)
+    image4.add_mask(mask)
+
+    image1.update_image(np.abs(image1.new_image), '-laplas')
+    image2.update_image(np.abs(image2.new_image), '-laplas')
+    image3.update_image(np.abs(image3.new_image), '-laplas')
+    image4.update_image(np.abs(image4.new_image), '-laplas')
+
+    image1.save_image()
+    image2.save_image()
+    image3.save_image()
+    image4.save_image()
 
 
 def lab_12():
@@ -445,6 +525,29 @@ def lab_12():
     image.save_image()
 
 
+def lab_mrt():
+    '''
+    ОБРАБОТКУ НЕЛЬЗЯ ДЕЛАТЬ!
+    ЛАПЛАСИАН НЕЛЬЗЯ
+    '''
+    width, height = 512, 512
+    image = dat_image_binary_read('images/mrt/', 'brain-H_x512', '.bin', width, height, format='h')
+    image.update_image(grayscale(image.new_image), '-test')
+    hist = histogram_img(image.new_image, image.colors())[0]
+    plot.plot(hist)
+    plot.show()
+
+    equalize_img(image)
+    pg = logarithmic_correction(image.new_image, 26)
+    image.update_image(pg, '-logGraded')
+    equalize_img(image)
+    image.save_image()
+
+    hist = histogram_img(image.new_image, image.colors())[0]
+    plot.plot(hist)
+    plot.show()
+
+    # W I P 
 
 
 if __name__ == '__main__':
@@ -452,7 +555,7 @@ if __name__ == '__main__':
     # lab_2()  # ЛР №3 внутри
     # lab_4()
 
-    # Лабораторная 5
+    # ---------- Лабораторная 5 ----------
     # images = [
     #     MyImage.load_image('images/', 'photo1', np.uint8),
     #     MyImage.load_image('images/', 'photo2', np.uint8),
@@ -479,8 +582,20 @@ if __name__ == '__main__':
     # lab_6()
     # lab_7()
     # lab_8()
+    # lab_9()
+    # lab_9_beautify()
     # lab_10_template()
-    # lab_11_gradient()
-    # lab_11_laplasian()
-    lab_12()
-
+    # ---------- Лабораторная 11 ----------
+    images = [
+        MyImage.load_image('images/lab11/', 'model', np.uint8),
+        MyImage.load_image('images/lab11/', 'model-noize', np.uint8),
+        MyImage.load_image('images/lab11/', 'model-noize-linearFiltered', np.uint8),
+        MyImage.load_image('images/lab11/', 'model-noize-medianFiltered', np.uint8)
+    ]
+    for image in images:
+        lab_11_gradient(image)
+        lab_11_gradient(image, 'vh')
+        lab_11_gradient(image, 'd')
+        lab_11_laplasian(image)
+    # lab_12()
+    # lab_mrt()
