@@ -308,16 +308,13 @@ def lab_9():
     blur307x221D = dat_image_binary_read('images/lab9/', 'blur307x221D', '.dat', 307, 221, format='f')
     blur307x221D_N = dat_image_binary_read('images/lab9/', 'blur307x221D_N', '.dat', 307, 221, format='f')
 
-    kernel_len = len(kernD76_f4)
-    width, height = 307, 221
-    # blur307x221D_fix = fix_blur(blur307x221D.new_image, kernD76_f4, 0.0001)
-    # blur307x221D.update_image(grayscale(blur307x221D_fix), 'decoTEST')
-    # blur307x221D.save_image()
-    blur307x221D_N_fix = fix_blur(blur307x221D_N.new_image, kernD76_f4, 15)
-    blur307x221D_N.update_image(grayscale(blur307x221D_N_fix), 'decoTEST')
-    blur307x221D_N.save_image()
+    blur307x221D_fix = fix_blur(blur307x221D.new_image, kernD76_f4, 0.0001)
 
-    # save(foo, 'decoTEST.jpg')
+    blur307x221D.update_image(grayscale(blur307x221D_fix), '-blurfixed')
+    blur307x221D.save_image()
+    blur307x221D_N_fix = fix_blur(blur307x221D_N.new_image, kernD76_f4, 15)
+    blur307x221D_N.update_image(grayscale(blur307x221D_N_fix), '-blurfixed')
+    blur307x221D_N.save_image()
 
 
 def lab_9_beautify():
@@ -359,17 +356,13 @@ def lab_10_template():
 
     conv_img = convolution_image(pixels, control_mass, m)
     image.update_image(conv_img, '-convolved')
-    # image.update_image(conv_img, '-convolved')
-    # image.save_image()
 
-    # pix = conv_img - pixels  # swap
     # pix = conv_img - pixels  # lpw
     # image.update_image(pix, '-convolved-substracted')
     ## hist = histogram_img(image.new_image, image.colors())[0]
     ## plot.plot(hist)
     ## plot.show()
 
-    pix = image.new_image
     porog2 = 60
 
     # porog2 = otsu_threshold(image, int(image.width * image.height))
@@ -377,17 +370,12 @@ def lab_10_template():
 
     # пороговая фильтрация для чётких контуров
     image.treshold(porog2)
-    image.update_image(image.new_image,
-                       '-porogContur-' + 'f' + str(f) + '-' + 'm' + str(m) + '-' + str(porog1) + '-' + str(porog2))
+    image.update_image(image.new_image, '-porogContur-' + 'f' + str(f) + '-' + 'm' + str(m) + '-' + str(porog1) + '-' + str(porog2))
     image.save_image()
 
 
 def lab_11_gradient(image: MyImage, direction='default'):
     th1, th2 = 190, 250
-    image1 = MyImage.load_image('images/lab11/', 'model', np.uint8)
-    image2 = MyImage.load_image('images/lab11/', 'model-noize', np.uint8)
-    image3 = MyImage.load_image('images/lab11/', 'model-noize-linearFiltered', np.uint8)
-    image4 = MyImage.load_image('images/lab11/', 'model-noize-medianFiltered', np.uint8)
 
     masks = [np.array([
             [0,  0, 0],
@@ -397,8 +385,7 @@ def lab_11_gradient(image: MyImage, direction='default'):
             [0,  0, 0],
             [0, -1, 1],
             [0,  0, 0]
-        ])
-    ]
+        ])]
 
     masks_vh = [np.array([
             [-1, -2, -1],
@@ -408,8 +395,7 @@ def lab_11_gradient(image: MyImage, direction='default'):
             [-1, 0, 1],
             [-2, 0, 2],
             [-1, 0, 1]
-        ])
-    ]
+        ])]
 
     masks_d = [np.array([
         [0,   1, 2],
@@ -419,54 +405,26 @@ def lab_11_gradient(image: MyImage, direction='default'):
         [-2, -1, 0],
         [-1,  0, 1],
         [ 0,  1, 2]
-    ])
-    ]
+    ])]
 
-    image1.treshold_inrange(th1, th2)
-    image2.treshold_inrange(th1, th2)
-    image3.treshold_inrange(th1, th2)
-    image4.treshold_inrange(th1, th2)
+    image.treshold_inrange(th1, th2)
 
     if direction == 'default':
-        image1.add_mask(masks)
-        image2.add_mask(masks)
-        image3.add_mask(masks)
-        image4.add_mask(masks)
-        image1.update_image(image1.new_image, '-gradient')
-        image2.update_image(image2.new_image, '-gradient')
-        image3.update_image(image3.new_image, '-gradient')
-        image4.update_image(image4.new_image, '-gradient')
+        image.add_mask(masks)
+        image.update_image(image.new_image, '-gradient')
     elif direction == 'vh':
-        image1.add_mask(masks_vh)
-        image2.add_mask(masks_vh)
-        image3.add_mask(masks_vh)
-        image4.add_mask(masks_vh)
-        image1.update_image(image1.new_image, '-gradientSobel-VH')
-        image2.update_image(image2.new_image, '-gradientSobel-VH')
-        image3.update_image(image3.new_image, '-gradientSobel-VH')
-        image4.update_image(image4.new_image, '-gradientSobel-VH')
+        image.add_mask(masks_vh)
+        image.update_image(image.new_image, '-gradientSobel-VH')
     elif direction == 'd':
-        image1.add_mask(masks_d)
-        image2.add_mask(masks_d)
-        image3.add_mask(masks_d)
-        image4.add_mask(masks_d)
-        image1.update_image(image1.new_image, '-gradientSobel-D')
-        image2.update_image(image2.new_image, '-gradientSobel-D')
-        image3.update_image(image3.new_image, '-gradientSobel-D')
-        image4.update_image(image4.new_image, '-gradientSobel-D')
+        image.add_mask(masks_d)
+        image.update_image(image.new_image, '-gradientSobel-D')
 
-    image1.save_image()
-    image2.save_image()
-    image3.save_image()
-    image4.save_image()
+    image.save_image()
+    image.reset_image()
 
 
-def lab_11_laplasian(iamge: MyImage):
+def lab_11_laplasian(image: MyImage):
     th1, th2 = 190, 250
-    image1 = MyImage.load_image('images/lab11/', 'model', np.uint8)
-    image2 = MyImage.load_image('images/lab11/', 'model-noize', np.uint8)
-    image3 = MyImage.load_image('images/lab11/', 'model-noize-linearFiltered', np.uint8)
-    image4 = MyImage.load_image('images/lab11/', 'model-noize-medianFiltered', np.uint8)
 
     mask = [np.array([
         [-1, -1, -1],
@@ -474,55 +432,35 @@ def lab_11_laplasian(iamge: MyImage):
         [-1, -1, -1]
     ])]
 
-    image1.treshold_inrange(th1, th2)
-    image2.treshold_inrange(th1, th2)
-    image3.treshold_inrange(th1, th2)
-    image4.treshold_inrange(th1, th2)
+    image.treshold_inrange(th1, th2)
 
-    image1.add_mask(mask)
-    image2.add_mask(mask)
-    image3.add_mask(mask)
-    image4.add_mask(mask)
+    image.add_mask(mask)
 
-    image1.update_image(np.abs(image1.new_image), '-laplas')
-    image2.update_image(np.abs(image2.new_image), '-laplas')
-    image3.update_image(np.abs(image3.new_image), '-laplas')
-    image4.update_image(np.abs(image4.new_image), '-laplas')
+    image.update_image(np.abs(image.new_image), '-laplas')
 
-    image1.save_image()
-    image2.save_image()
-    image3.save_image()
-    image4.save_image()
+    image.save_image()
+    image.reset_image()
 
 
-def lab_12():
-    image = MyImage.load_image('images/lab12/', 'model-2', np.uint8)
-    height = image.new_image.shape[0]
-    width = image.new_image.shape[1]
+def lab_12(image: MyImage):
+    matrix_size = 3  # квадратная
+    image.treshold(200)
+
     pix = image.new_image
 
-    for row in range(height):
-        for col in range(width):
-            if pix[row, col] < 200:
-                pix[row, col] = 0
-            else:
-                pix[row, col] = 255
-
-    image.update_image(pix, '-porogovoe')
-    median_filter(image, 3)
-    pix = image.new_image
-
-    pix_dil = dilatation(pix, 3, 3)  # обосновать выбор размера матрицы
-    # pix_eros = erosion(pix, 3, 3)
-    pix_eros = dilatation(pix_dil, 3, 3)
+    pix_dil = morphological_operator(pix, matrix_size, matrix_size, 'dilatation')  # обосновать выбор размера матрицы
+    pix_eros = morphological_operator(pix, matrix_size, matrix_size, 'erosion')
 
     dilatation_result = pix_dil - pix
-    image.update_image(dilatation_result, '-dilatated-3x3')
+    image.update_image(dilatation_result, '-dilatated-' + str(matrix_size) + 'x' + str(matrix_size))
     image.save_image()
 
-    erosion_result = pix - pix_eros
-    image.update_image(erosion_result, '-erosed-dilateted-3x3')
+    erosion_result = np.abs(pix_eros - pix)
+    image.update_image(erosion_result, '-eroseTemp')
+    image.negative()
+    image.update_image(image.new_image, '-erosed-' + str(matrix_size) + 'x' + str(matrix_size))
     image.save_image()
+    image.reset_image()
 
 
 def lab_mrt():
@@ -578,24 +516,40 @@ if __name__ == '__main__':
     #     negative(image)
     #
     #     lab_5(image)
+    # ------------------------------------
 
     # lab_6()
     # lab_7()
     # lab_8()
-    # lab_9()
+    lab_9()
     # lab_9_beautify()
     # lab_10_template()
+
     # ---------- Лабораторная 11 ----------
-    images = [
-        MyImage.load_image('images/lab11/', 'model', np.uint8),
-        MyImage.load_image('images/lab11/', 'model-noize', np.uint8),
-        MyImage.load_image('images/lab11/', 'model-noize-linearFiltered', np.uint8),
-        MyImage.load_image('images/lab11/', 'model-noize-medianFiltered', np.uint8)
-    ]
-    for image in images:
-        lab_11_gradient(image)
-        lab_11_gradient(image, 'vh')
-        lab_11_gradient(image, 'd')
-        lab_11_laplasian(image)
+    # images = [
+    #     MyImage.load_image('images/lab11/', 'model', np.uint8),
+    #     MyImage.load_image('images/lab11/', 'model-noize', np.uint8),
+    #     MyImage.load_image('images/lab11/', 'model-noize-linearFiltered', np.uint8),
+    #     MyImage.load_image('images/lab11/', 'model-noize-medianFiltered', np.uint8)
+    # ]
+    # for image in images:
+    #     lab_11_gradient(image)
+    #     lab_11_gradient(image, 'vh')
+    #     lab_11_gradient(image, 'd')
+    #     lab_11_laplasian(image)
+    # -------------------------------------
+
+    # ---------- Лабораторная 12 ----------
+    # images = [
+    #     MyImage.load_image('images/lab12/', 'model', np.uint8),
+    #     MyImage.load_image('images/lab12/', 'model-noize', np.uint8),
+    #     MyImage.load_image('images/lab12/', 'model-noize-linearFiltered', np.uint8),
+    #     MyImage.load_image('images/lab12/', 'model-noize-medianFiltered', np.uint8),
+    #     MyImage.load_image('images/lab12/', 'rock', np.uint8)
+    # ]
+    # for image in images:
+    #     lab_12(image)
+    # -------------------------------------
+
     # lab_12()
     # lab_mrt()

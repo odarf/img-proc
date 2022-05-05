@@ -53,7 +53,7 @@ class MyImage:
 
     def treshold(self, treshold):
         """
-        Всё, что не меньше значения, становится равным 0 \n
+        Всё, что меньше значения, становится равным 0 \n
         :param treshold: порог
         """
         for i in range(self.height):
@@ -96,3 +96,6 @@ class MyImage:
                     sum1 += np.abs(sum2)
                 img[row, col] = sum1
         self.new_image = img
+
+    def negative(self):
+        self.new_image = 255 - self.new_image

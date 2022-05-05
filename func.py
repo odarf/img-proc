@@ -24,21 +24,6 @@ def read_image_gray(file):
     return image
 
 
-def read_bin(file, format, width, height) -> MyImage:
-    d = {'b': 1, 'B': 1, 'h': 2, 'H': 2, 'i': 4, 'I': 4, 'l': 4, 'L': 4,
-         'q': 8, 'Q': 8, 'f': 4, 'd': 8}
-    with open(file, "rb") as binary_file:
-        figures = []
-
-        data = binary_file.read()
-        for i in range(0, len(data), d[format]):
-            elem = struct.unpack(format, data[i:i + d[format]])
-            figures.append(elem[0])
-
-        data = np.reshape(figures, (height, width))
-        return MyImage()
-
-
 def dat_image_binary_read(folder, name, extension, width, height, format) -> MyImage:
     d = {'b': 1, 'B': 1, 'h': 2, 'H': 2, 'i': 4, 'I': 4, 'l': 4, 'L': 4,
          'q': 8, 'Q': 8, 'f': 4, 'd': 8}
@@ -70,7 +55,6 @@ def read_xcr(file, offset, width, height):
         return data
 
 
-# Устарело
 def save(data, saveas: str):
     """
     Функция сохранения\n
@@ -79,15 +63,6 @@ def save(data, saveas: str):
     """
     Image.fromarray(np.array(data, copy=True).astype(np.uint8)).save(saveas)
     print('File ' + saveas + ' saved')
-
-
-def scale_to_255(value):
-    int(value)
-    while value > 255:
-        value -= 255
-    while value < 0:
-        value += 255
-    return value
 
 
 def grayscale(arr):
@@ -105,32 +80,6 @@ def grayscale(arr):
     output = np.array(grayscaled_data)
     # output = normalization(output, 2)
     return output
-
-
-# def grayscale(arr):
-#     print('Started making grayscale')
-#     gs_data = []
-#     if len(np.array(arr).shape) == 2:
-#         x_max = np.max(arr)
-#         x_min = np.min(arr)
-#         dx = x_max - x_min
-#         for i in arr:
-#             calculated_x = int((i[0] - x_min) * 255) / dx
-#             i = (calculated_x, calculated_x, calculated_x)
-#             gs_data.append(i)
-#         return gs_data
-#     if len(np.array(arr).shape) == 3:
-#         x_max = np.amax(arr)[0]
-#         x_min = np.amin(arr)[0]
-#         dx = x_max - x_min
-#         for i in arr:
-#             temp = []
-#             for j in i:
-#                 calculated_x = int((i[0] - x_min) * 255) / dx
-#                 i = [calculated_x, calculated_x, calculated_x]
-#                 temp.append(i)
-#             gs_data.append(temp)
-#         return gs_data
 
 
 def normalization(arr: list, dim: int, N=255):
@@ -250,6 +199,7 @@ def resize(image, coefficient, resize_type, mode, width, height):
     return output_image
 
 
+# So-so
 def negative(data: MyImage):
     max_v = np.max(data.new_image)
     result_array = []
@@ -339,10 +289,6 @@ def equalize_img(image: MyImage):
 
     eq_img = eq(image.new_image, cdf)
     image.update_image(eq_img, '-cdf-equalized')
-
-
-def diff(input_data, dx=1):
-    return np.diff(input_data) / dx
 
 
 # @numba.jit(nopython=True)
@@ -811,17 +757,7 @@ def substract_images(image1: np.ndarray, image2: np.ndarray):
     return output
 
 
-def gradient(image: MyImage):
-    mask = np.array([
-            [-1, -1, -1],
-            [-1, 8, -1],
-            [-1, -1, -1]
-        ])
-
-    img = convolution_image(image.new_image, mask, 32)
-    image.update_image(img, '-gradient')
-
-
+# Archive
 def laplasian(m):
     height = m.shape[0]
     width = m.shape[1]
@@ -840,71 +776,41 @@ def laplasian(m):
     return output
 
 
-def erosion(image, mask_x, mask_y):
-    er_mask = np.full((mask_y, mask_x), 255)
+def morphological_operator(image, mask_x, mask_y, morph: str) -> np.array:
+    er_mask = np.zeros((mask_y, mask_x), dtype=float) + 255
     height = image.shape[0]
     width = image.shape[1]
 
-    new_image = []
+    output = []
     for row in range(height):
         new_row = []
         for col in range(width):
-            if (row < (mask_y // 2)) or (row >= height - (mask_y // 2)) \
-                    or (col < (mask_x // 2)) or (col >= width - (mask_x // 2)):
-                new_row.append(image[row][col])
+            if (row < (mask_y // 2)) or \
+               (row >= height - (mask_y // 2)) or \
+               (col < (mask_x // 2)) or \
+               (col >= width - (mask_x // 2)):
+                new_row.append(image[row, col])
             else:
                 check_sum = 0
                 for mask_row in range(mask_y):
                     for mask_col in range(mask_x):
                         if image[(row - (mask_y // 2) + mask_row), (col - (mask_x // 2) + mask_col)] != \
-                                er_mask[mask_row][mask_col]:
+                                er_mask[mask_row, mask_col]:
                             check_sum += 1
                 if check_sum == mask_y * mask_x:
-                    new_row.append(image[row][col])
+                    if morph == 'dilatation':
+                        new_row.append(0)
+                    elif morph == 'erosion':
+                        new_row.append(255)
                 else:
-                    new_row.append(0)
+                    if morph == 'dilatation':
+                        new_row.append(255)
+                    elif morph == 'erosion':
+                        new_row.append(0)
 
-        new_image.append(new_row)
+        output.append(new_row)
 
-    new_height = len(new_image)
-    new_width = len(new_image[0])
-
-    new_image = np.array(new_image).reshape(new_height, new_width)
-    return new_image
-
-
-def dilatation(image, mask_x, mask_y):
-    er_mask = np.full((mask_y, mask_x), 255)
-    height = image.shape[0]
-    width = image.shape[1]
-
-    new_image = []
-    for row in range(height):
-        new_row = []
-        for col in range(width):
-            if (row < (mask_y // 2)) or (row >= height - (mask_y // 2)) \
-                    or (col < (mask_x // 2)) or (col >= width - (mask_x // 2)):
-                new_row.append(image[row][col])
-            else:
-                check_sum = 0
-                for mask_row in range(mask_y):
-                    for mask_col in range(mask_x):
-                        if image[(row - (mask_y // 2) + mask_row), (col - (mask_x // 2) + mask_col)] != \
-                                er_mask[mask_row][mask_col]:
-                            check_sum += 1
-                if check_sum == mask_y * mask_x:
-                    new_row.append(0)
-                else:
-                    new_row.append(255)
-
-        new_image.append(new_row)
-
-    new_height = len(new_image)
-    new_width = len(new_image[0])
-
-    new_image = np.array(new_image).reshape(new_height, new_width)
-
-    return new_image
+    return np.array(output)
 
 
 def data_read(folder, name, ext, dtype, width, height) -> np.ndarray:
@@ -923,24 +829,18 @@ def re_im(data: np.array, N):
     return re, im
 
 
-
 def fix_blur(image: np.array, kernel: np.ndarray, alpha: float):
     width, height = len(image[0]), len(image)
     kernel_len = len(kernel[0])  # длина ядра смазывающей функции
-    control_len = len(kernel)
     kernel = kernel[0].tolist()
-
 
     # добавляю нули в конец массива ядра
     for i in range(width - kernel_len):
         kernel.append(0)
-        # kernel[0].append(0)
 
-    # kernel_fourier = fourier_ampl(kernel)
     re_h, im_h = re_im(kernel, width)
 
     image_spectrum = []
-    image_spectrum_re, image_spectrum_im = [], []
     module = []
     output_data = []
     step = 0
@@ -953,10 +853,8 @@ def fix_blur(image: np.array, kernel: np.ndarray, alpha: float):
         re, im = re_im(image[row], width)
 
         # комплексное деление строчки изображения и ядра функции
-        # alpha = 0.005????
         r_re, r_im = [], []
         for i in range(width):
-            # print('текущий индекс ', i)
             correction_factor = (re_h[i] ** 2 + im_h[i] ** 2) + alpha  # поправочный множитель
             r_re.append((re_h[i] * re[i] + im_h[i] * im[i]) / correction_factor)
             r_im.append((re_h[i] * im[i] - im_h[i] * re[i]) / correction_factor)
@@ -972,6 +870,7 @@ def fix_blur(image: np.array, kernel: np.ndarray, alpha: float):
     return output_data
 
 
+# So-so
 def otsu_threshold(image: MyImage, size) -> int:
     min = image.new_image.min()
     max = image.new_image.max()
