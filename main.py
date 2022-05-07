@@ -318,7 +318,7 @@ def lab_9():
 
 
 def lab_9_beautify():
-    image = MyImage.load_image('images/lab9/', 'blur307x221D_N-1decoTEST', np.uint8)
+    image = MyImage.load_image('images/lab9/', 'blur307x221D_N-1-blurfixed', np.uint8)
     width, height = 307, 221
     # linear_filter(image, 3)
     median_filter(image, 3)
@@ -469,24 +469,31 @@ def lab_mrt():
     ЛАПЛАСИАН НЕЛЬЗЯ
     '''
     width, height = 512, 512
-    image = dat_image_binary_read('images/mrt/', 'brain-H_x512', '.bin', width, height, format='h')
-    image.update_image(grayscale(image.new_image), '-test')
-    hist = histogram_img(image.new_image, image.colors())[0]
+    width2, height2 = 256, 256
+    image1 = dat_image_binary_read('images/mrt/', 'brain-H_x512', '.bin', width, height, format='h')
+    image2 = dat_image_binary_read('images/mrt/', 'brain-V_x256', '.bin', width, height, format='h')
+    image3 = dat_image_binary_read('images/mrt/', 'spine-H_x256', '.bin', width, height, format='h')
+    image4 = dat_image_binary_read('images/mrt/', 'spine-V_x512', '.bin', width, height, format='h')
+    image1.update_image(grayscale(image1.new_image), '-test')
+    hist = histogram_img(image1.new_image, image1.colors())[0]
     plot.plot(hist)
     plot.show()
 
-    equalize_img(image)
-    pg = logarithmic_correction(image.new_image, 26)
-    image.update_image(pg, '-logGraded')
-    equalize_img(image)
-    image.save_image()
+    equalize_img(image1)
+    pg = logarithmic_correction(image1.new_image, 26)
+    image1.update_image(pg, '-logGraded')
+    equalize_img(image1)
+    image1.save_image()
 
-    hist = histogram_img(image.new_image, image.colors())[0]
+    hist = histogram_img(image1.new_image, image1.colors())[0]
     plot.plot(hist)
     plot.show()
 
     # W I P 
 
+
+def stones():
+    print('Size = 7px')
 
 if __name__ == '__main__':
     # lab_1()  # ЛР №3 внутри
@@ -521,8 +528,8 @@ if __name__ == '__main__':
     # lab_6()
     # lab_7()
     # lab_8()
-    lab_9()
-    # lab_9_beautify()
+    # lab_9()
+    lab_9_beautify()
     # lab_10_template()
 
     # ---------- Лабораторная 11 ----------
