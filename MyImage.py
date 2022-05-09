@@ -12,6 +12,7 @@ class MyImage:
         self.file_number = 0
         self.data_type = data_type
         self.original_image = np.array(data, copy=True)
+        # self.original_image = np.array(data)
         self.new_image = np.array(data, copy=True)
         self.width = self.new_image.shape[1]
         self.height = self.new_image.shape[0]

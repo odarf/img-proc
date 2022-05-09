@@ -1,5 +1,5 @@
 import numpy as np
-
+import cv2
 import func
 from func import *
 from matplotlib import pyplot as plot
@@ -463,31 +463,73 @@ def lab_12(image: MyImage):
     image.reset_image()
 
 
-def lab_mrt():
+def lab_mrt(image: MyImage):
     '''
     ОБРАБОТКУ НЕЛЬЗЯ ДЕЛАТЬ!
     ЛАПЛАСИАН НЕЛЬЗЯ
     '''
-    width, height = 512, 512
-    width2, height2 = 256, 256
-    image1 = dat_image_binary_read('images/mrt/', 'brain-H_x512', '.bin', width, height, format='h')
-    image2 = dat_image_binary_read('images/mrt/', 'brain-V_x256', '.bin', width, height, format='h')
-    image3 = dat_image_binary_read('images/mrt/', 'spine-H_x256', '.bin', width, height, format='h')
-    image4 = dat_image_binary_read('images/mrt/', 'spine-V_x512', '.bin', width, height, format='h')
-    image1.update_image(grayscale(image1.new_image), '-test')
-    hist = histogram_img(image1.new_image, image1.colors())[0]
-    plot.plot(hist)
+    # image = dat_image_binary_read('images/mrt/brain-h/', 'brain-h_x512', '.bin', width, height, format='h')
+    width, height = image.width, image.height
+
+    # image.update_image(image.new_image, '-test')
+
+    image.save_image()
+    # hist = histogram_img(image, image.colors())[0]
+    plot.hist(image.new_image.flatten(), 256, [0, 256])
+    plot.title('Исходное ' + image.fname)
+    plot.savefig(image.dir + image.fname + 'Исходное ' + image.fname)
+    # plot.plot(hist)
     plot.show()
 
-    equalize_img(image1)
-    pg = logarithmic_correction(image1.new_image, 26)
-    image1.update_image(pg, '-logGraded')
-    equalize_img(image1)
-    image1.save_image()
+    th = 10
+    # src = cv2.imread('images/mrt/brain-h/brain-H_x512.jpg', 0)
+    # mask = cv2.adaptiveThreshold(src, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 12)
 
-    hist = histogram_img(image1.new_image, image1.colors())[0]
-    plot.plot(hist)
+    # th = int(otsu_threshold(image, (width * height)) / 2)
+    # th = otsu(image)
+    print('Порог для ' + image.fname + ' = ' + str(th))
+
+    image.treshold(th)
+    median_filter(image, 3)
+    image.update_image(image.new_image, '-mask-' + str(th))
+    mask = image.new_image
+    image.save_image()
+    image.reset_image()
+
+    for row in range(height):
+        for col in range(width):
+            if mask[row, col] == 255:
+                image.new_image[row, col] *= 1
+            elif mask[row, col] == 0:
+                image.new_image[row, col] = 0
+
+    for row in range(height):
+        for col in range(width):
+            if mask[row, col] == 255:  # 3, 0.8
+                # image.new_image[row, col] = (10 * np.log(image.new_image[row, col] + 1)).round()
+                image.new_image[row, col] = (3 * (image.new_image[row, col] ** 0.8)).round()
+    # buff = power_grad(image1.new_image, 1.1, 0.5)
+    # buff = logarithmic_correction(image1.new_image, 1)
+    image.update_image(image.new_image, '-powerGraded')
+    image.save_image()
+
+    # equalize_img(image)
+    imgtest = cv2.imread(image.dir + image.fname + '-3-powerGraded.jpg', 0)
+    # imgtest = image.new_image
+    plot.hist(imgtest.flatten(), 256, [0, 256])
+    plot.title('Настроенное ' + image.fname)
+    plot.savefig(image.dir + image.fname + 'Настроенное ' + image.fname)
     plot.show()
+    equ = cv2.equalizeHist(imgtest)
+    res = np.hstack((imgtest, equ))
+    cv2.imwrite(image.dir + image.fname + 'compare-eq-test.jpg', equ)
+
+    # image.update_image(image.new_image, '-eqed')
+    # image.save_image()
+    # hist = histogram_img(image, image.colors())[0]
+    # plot.plot(hist)
+    # plot.show()
+
 
     # W I P 
 
@@ -529,7 +571,7 @@ if __name__ == '__main__':
     # lab_7()
     # lab_8()
     # lab_9()
-    lab_9_beautify()
+    # lab_9_beautify()
     # lab_10_template()
 
     # ---------- Лабораторная 11 ----------
@@ -559,4 +601,13 @@ if __name__ == '__main__':
     # -------------------------------------
 
     # lab_12()
-    # lab_mrt()
+    images = [
+             dat_image_binary_read('images/mrt/brain-h/', 'brain-H_x512', '.bin', 512, 512, format='h'),
+             dat_image_binary_read('images/mrt/brain-v/', 'brain-V_x256', '.bin', 256, 256, format='h'),
+             dat_image_binary_read('images/mrt/spine-h/', 'spine-H_x256', '.bin', 256, 256, format='h'),
+             dat_image_binary_read('images/mrt/spine-v/', 'spine-V_x512', '.bin', 512, 512, format='h')
+
+        ]
+    for image in images:
+        lab_mrt(image)
+

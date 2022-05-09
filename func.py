@@ -38,7 +38,7 @@ def dat_image_binary_read(folder, name, extension, width, height, format) -> MyI
 
         data = np.reshape(figures, (height, width))
     # return MyImage(folder, name, extension, data, 'f')
-    return MyImage(folder, name, data, np.uint8)
+    return MyImage(folder, name, grayscale(data), data_type=np.uint8)
 
 
 def read_xcr(file, offset, width, height):
@@ -230,7 +230,7 @@ def logarithmic_correction(arr, constant):
 
     for row in range(height):
         for col in range(width):
-            data[row][col] = constant * np.log(data[row][col] + 1)
+            data[row, col] = (constant * np.log(data[row, col] + 1)).round()
 
     # for row in arr:
     #    buff = [constant * (np.log((x + 1), 10)) for x in row]
@@ -250,14 +250,30 @@ def power_grad(arr, constant, power):
     return data
 
 
-def histogram_img(image: np.ndarray, colors: int):
-    hist = [0] * colors
-    for x in range(image.shape[0]):
-        for y in range(image.shape[1]):
-            i = int(image[x, y])
+def histogram_img(image: MyImage, colors: int):
+    # hist = [0] * colors
+    max = image.new_image.max()+1
+    hist = np.zeros(max).astype(int)
+    for x in range(image.height):
+        for y in range(image.width):
+            i = int(image.new_image[x][y])
             hist[i] += 1
 
-    return np.array(hist), '-histogram'
+    return hist, '-histogram'
+
+
+def histogram_distr(histo: np.array):
+    integral = np.zeros(256).astype(int)
+    integral[0] = histo[0]
+    for i in range(1, 255):
+        integral[i] = integral[i - 1] + histo[i]
+    return integral
+
+
+def eq_dist(image: MyImage, distr):
+    for h in range(image.height):
+        for w in range(image.width):
+            image.new_image[h, w] = distr[int(image.new_image[h, w])]
 
 
 def cdf_calc(histogram: np.ndarray):
@@ -275,20 +291,67 @@ def eq(image: np.ndarray, cdf: np.ndarray) -> np.ndarray:
 
     for x in range(image.shape[0]):
         for y in range(image.shape[1]):
-            output_data[x, y] = round((cdf[output_data[x, y]] - cdf_min) * 255.0 /
-                                      (image.shape[0] * image.shape[1] - 1)
-                                      )
+            output_data[x, y] = round(
+                (cdf[output_data[x, y]] - cdf_min) * 255.0 / (image.shape[0] * image.shape[1] - 1)
+            )
 
     return output_data
 
 
 def equalize_img(image: MyImage):
-    hist = histogram_img(image.new_image, image.colors())[0]
+    hist = histogram_img(image, image.colors())[0]
 
     cdf = cdf_calc(hist)[0]
 
     eq_img = eq(image.new_image, cdf)
-    image.update_image(eq_img, '-cdf-equalized')
+    image.update_image(eq_img, '-cdf-normed')
+
+
+def histogram(image: MyImage):
+    pix_d = []
+    for row in range(image.height):
+        for col in range(image.width):
+            pix_d.append(image.new_image[row, col])
+
+    # matrix = np.array(pix_d).reshape(image.height, image.width)
+
+    hist_y = [0 for i in range(256)]
+    hist_x = [i for i in range(256)]
+
+    index = 0
+    for i in hist_x:
+        for pix in pix_d:
+            if pix == i:
+                hist_y[index] += 1
+        index += 1
+
+    return hist_x, hist_y, pix_d
+
+
+def equalization(image: MyImage):
+    pix_d = []
+    matrix = np.array(image.new_image)
+    for row in range(image.height):
+        for col in range(image.width):
+            pix_d.append(image.new_image[row, col])
+
+    x, y, pix_d = histogram(image)
+
+    cdf = [0]
+    for i in range(1, len(y)):
+        cdf.append(cdf[i-1] + ((y[i-1] + y[i]) * 0.5))
+    max_cdf = max(cdf)
+    for i in range(255):
+        cdf[i] /= max_cdf
+
+    for i in range(image.width * image.height):
+        for j in range(255):
+            if pix_d == j:
+                pix_d[i] = cdf[j] * 255
+
+    matrix = np.reshape(pix_d, (image.height, image.width))
+
+    return matrix
 
 
 # @numba.jit(nopython=True)
@@ -911,3 +974,31 @@ def otsu_threshold(image: MyImage, size) -> int:
 
     threshold += min
     return threshold
+
+
+def otsu(image: MyImage) -> int:
+    n = image.height * image.width
+    mean_weight = 1.0 / n
+    hist, bins = np.histogram(image.new_image, np.arange(0, 257))
+    final_thresh = -1
+    final_value = -1
+    int_arr = np.arange(256)
+    for t in bins[1:-1]:
+        pcb = np.sum(hist[:t])
+        pcf = np.sum(hist[t:])
+        Wb = pcb * mean_weight
+        Wf = pcf * mean_weight
+
+        mub = np.sum(int_arr[:t] * hist[:t]) / float(pcb)
+        muf = np.sum(int_arr[t:] * hist[t:]) / float(pcf)
+
+        value = Wb * Wf * (mub - muf) ** 2
+
+        if value > final_value:
+            final_thresh = t
+            final_value = value
+
+    return final_thresh
+
+
+
