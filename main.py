@@ -617,7 +617,7 @@ def stones():
     a = cv2.imread('images/stones/stones.jpg')
     b = cv2.addWeighted(a, 0.7, circles, 1, 0.0)
 
-    cv2.imwrite('images/stones/rgb-final.jpg', b)
+    cv2.imwrite('images/stones/rgb-final-' + str(count) + '.jpg', b)
 
     image.save_image()
 
@@ -628,8 +628,8 @@ def stones_2():
     image.update_image(image.new_image, '-thed')
     m = image.new_image
 
-    kernel1 = np.ones((1, 6), 'uint8')  # x, 1 - vertical; 1, x - horizontal
-    kernel2 = np.ones((1, 7), 'uint8')  # x, 1 - vertical; 1, x - horizontal
+    kernel1 = np.ones((6, 1), 'uint8')  # x, 1 - vertical; 1, x - horizontal
+    kernel2 = np.ones((7, 1), 'uint8')  # x, 1 - vertical; 1, x - horizontal
     # kernel3 = np.ones((1, 1), 'uint8')
     pix_eros1 = cv2.erode(m, kernel1, iterations=1)
     image.update_image(pix_eros1, '-erosed-' + str(kernel1.shape[0]))
@@ -700,7 +700,7 @@ def stones_2():
     a = cv2.imread('images/stones/stones.jpg')
     b = cv2.addWeighted(a, 0.7, circles, 1, 0.0)
 
-    cv2.imwrite('images/stones/rgb-final-horizontal.jpg', b)
+    cv2.imwrite('images/stones/rgb-final-vertical-' + str(count) + '.jpg', b)
 
     image.save_image()
 
@@ -779,5 +779,5 @@ if __name__ == '__main__':
     # for image in images:
     #     lab_mrt(image)
     # -------------------------------------------
-    stones()
-    # stones_2()
+    # stones()
+    stones_2()
