@@ -521,8 +521,8 @@ def lab_mrt(image: MyImage):
     plot.savefig(image.dir + image.fname + 'Настроенное ' + image.fname)
     plot.show()
     equ = cv2.equalizeHist(imgtest)
-    res = np.hstack((imgtest, equ))
-    cv2.imwrite(image.dir + image.fname + 'compare-eq-test.jpg', equ)
+    # res = np.hstack((imgtest, equ))
+    cv2.imwrite(image.dir + image.fname + '-final-mask' + str(th) + '-.jpg', equ)
 
     # image.update_image(image.new_image, '-eqed')
     # image.save_image()
