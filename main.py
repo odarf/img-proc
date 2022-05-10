@@ -532,7 +532,7 @@ def stones():
     # plot.show()
     print(otsu(image))
     print(otsu_threshold(image, (image.height * image.width)))
-    image.treshold(135)
+    image.treshold(150)
     image.update_image(image.new_image, '-thed')
     m = image.new_image
     image.save_image()
@@ -547,42 +547,50 @@ def stones():
 
     kernel1 = np.ones((6, 6), 'uint8')
     kernel2 = np.ones((7, 7), 'uint8')
-    kernel3 = np.ones((2, 2), 'uint8')
+    kernel3 = np.ones((1, 1), 'uint8')
     pix_eros1 = cv2.erode(m, kernel1, iterations=1)
-    image.update_image(pix_eros1, '-erosed-4x4')
+    image.update_image(pix_eros1, '-erosed-' + str(kernel1.shape[0]))
     image.save_image()
     pix_eros2 = cv2.erode(m, kernel2, iterations=1)
-    kernel4 = np.ones((1, 1), 'uint8')
-    pix_eros2 = cv2.erode(pix_eros2, kernel4, iterations=1)
+    pix_eros2 = cv2.dilate(pix_eros2, kernel3, iterations=1)
 
-    image.update_image(pix_eros2, '-erosed-5x5')
+    image.update_image(pix_eros2, '-erosed-' + str(kernel2.shape[0]))
     image.save_image()
 
     # erosion_result = sub(pix_eros1, pix_eros2)
     erosion_result = np.subtract(pix_eros1, pix_eros2)
 
-    # result1 = bwareaopen(m, 11)
-    # image.update_image(result1, '-bwareaopen1')
-    # image.save_image()
-    # result1 = image.new_image
-    # result2 = bwareaopen(m, 121)
-    # image.update_image(result2, '-bwareaopen2')
-    # image.save_image()
-    # #erosion_result = sub(m, erosion_result1)
-    # erosion_result = np.subtract(result1, result2)
-
-
-
     image.update_image(erosion_result, '-erosed')
     image.save_image()
 
-
-    for row in range(1, image.height-1):
-        for col in range(1, image.width-1):
+    for row in range(2, image.height - 2):
+        for col in range(2, image.width - 2):
             if image.new_image[row, col] == 255:
-                if image.new_image[row, col-1] == 0 and image.new_image[row, col+1] == 0 and image.new_image[row-1, col-1] == 0 and image.new_image[row-1, col] == 0 and image.new_image[row-1, col+1] == 0 and image.new_image[row+1, col-1] == 0 and image.new_image[row+1, col] == 0 and image.new_image[row+1, col+1] == 0:
+                if image.new_image[row, col - 1] == 0 and \
+                        image.new_image[row, col + 1] == 0 and \
+                        image.new_image[row, col - 2] == 0 and \
+                        image.new_image[row, col + 2] == 0 and \
+                        image.new_image[row - 1, col] == 0 and \
+                        image.new_image[row - 1, col - 1] == 0 and \
+                        image.new_image[row - 1, col + 1] == 0 and \
+                        image.new_image[row - 1, col + 2] == 0 and \
+                        image.new_image[row - 1, col - 2] == 0 and \
+                        image.new_image[row + 1, col] == 0 and \
+                        image.new_image[row + 1, col - 1] == 0 and \
+                        image.new_image[row + 1, col + 1] == 0 and \
+                        image.new_image[row + 1, col + 2] == 0 and \
+                        image.new_image[row + 1, col - 2] == 0 and \
+                        image.new_image[row + 2, col] == 0 and \
+                        image.new_image[row + 2, col + 1] == 0 and \
+                        image.new_image[row + 2, col - 1] == 0 and \
+                        image.new_image[row + 2, col + 2] == 0 and \
+                        image.new_image[row + 2, col - 2] == 0 and \
+                        image.new_image[row - 2, col] == 0 and \
+                        image.new_image[row - 2, col - 1] == 0 and \
+                        image.new_image[row - 2, col + 1] == 0 and \
+                        image.new_image[row - 2, col - 2] == 0 and \
+                        image.new_image[row - 2, col + 2] == 0:
                     image.new_image[row, col] = 123
-
 
     count = 0
     for row in range(image.height):
@@ -602,10 +610,7 @@ def stones():
         for col in range(image.width):
             if image.new_image[row, col] == 238:
                 cv2.circle(circles, (col, row), 6, (0, 0, 255), 2)
-    # image.negative()
-    # dil = cv2.dilate(image.new_image, kernel3, iterations=1)
-    # image.update_image((dil + laplas), '-sumMaskLaplas')
-    # image.update_image(image.new_image + circles, '-circled')
+
     image.original_image = np.abs(image.original_image - 50)
     image.update_image(np.abs(image.new_image), '-final')
 
@@ -616,6 +621,88 @@ def stones():
 
     image.save_image()
 
+
+def stones_2():
+    image = MyImage.load_image('images/stones/', 'stones', np.uint8)
+    image.treshold(150)
+    image.update_image(image.new_image, '-thed')
+    m = image.new_image
+
+    kernel1 = np.ones((1, 6), 'uint8')  # x, 1 - vertical; 1, x - horizontal
+    kernel2 = np.ones((1, 7), 'uint8')  # x, 1 - vertical; 1, x - horizontal
+    # kernel3 = np.ones((1, 1), 'uint8')
+    pix_eros1 = cv2.erode(m, kernel1, iterations=1)
+    image.update_image(pix_eros1, '-erosed-' + str(kernel1.shape[0]))
+    image.save_image()
+    pix_eros2 = cv2.erode(m, kernel2, iterations=1)
+    # pix_eros2 = cv2.dilate(pix_eros2, kernel3, iterations=1)
+
+    image.update_image(pix_eros2, '-erosed-' + str(kernel2.shape[0]))
+    image.save_image()
+
+    # erosion_result = sub(pix_eros1, pix_eros2)
+    erosion_result = np.subtract(pix_eros1, pix_eros2)
+
+    image.update_image(erosion_result, '-erosed')
+    image.save_image()
+
+    for row in range(2, image.height-2):
+        for col in range(2, image.width-2):
+            if image.new_image[row, col] == 255:
+                if image.new_image[row, col-1] == 0 and \
+                        image.new_image[row, col+1] == 0 and \
+                        image.new_image[row, col-2] == 0 and \
+                        image.new_image[row, col+2] == 0 and \
+                        image.new_image[row-1, col] == 0 and \
+                        image.new_image[row-1, col-1] == 0 and \
+                        image.new_image[row-1, col+1] == 0 and \
+                        image.new_image[row-1, col+2] == 0 and \
+                        image.new_image[row-1, col-2] == 0 and \
+                        image.new_image[row+1, col] == 0 and \
+                        image.new_image[row+1, col-1] == 0 and \
+                        image.new_image[row+1, col+1] == 0 and \
+                        image.new_image[row+1, col+2] == 0 and \
+                        image.new_image[row+1, col-2] == 0 and \
+                        image.new_image[row+2, col] == 0 and \
+                        image.new_image[row+2, col+1] == 0 and \
+                        image.new_image[row+2, col-1] == 0 and \
+                        image.new_image[row+2, col+2] == 0 and \
+                        image.new_image[row+2, col-2] == 0 and \
+                        image.new_image[row-2, col] == 0 and \
+                        image.new_image[row-2, col-1] == 0 and \
+                        image.new_image[row-2, col+1] == 0 and \
+                        image.new_image[row-2, col-2] == 0 and \
+                        image.new_image[row-2, col+2] == 0:
+                    image.new_image[row, col] = 123
+
+    count = 0
+    for row in range(image.height):
+        for col in range(image.width):
+            if image.new_image[row, col] == 123:
+                count += 1
+    print('Кол-во камней = ', count)
+
+    for row in range(image.height):
+        for col in range(image.width):
+            if image.new_image[row, col] == 123:
+                image.new_image[row, col] = 238
+            else:
+                image.new_image[row, col] = 0
+    circles = np.ones(shape=(len(image.new_image), len(image.new_image[0]), 3), dtype=np.uint8)
+    for row in range(image.height):
+        for col in range(image.width):
+            if image.new_image[row, col] == 238:
+                cv2.circle(circles, (col, row), 6, (0, 0, 255), 2)
+
+    image.original_image = np.abs(image.original_image - 50)
+    image.update_image(np.abs(image.new_image), '-final')
+
+    a = cv2.imread('images/stones/stones.jpg')
+    b = cv2.addWeighted(a, 0.7, circles, 1, 0.0)
+
+    cv2.imwrite('images/stones/rgb-final-horizontal.jpg', b)
+
+    image.save_image()
 
 if __name__ == '__main__':
     # lab_1()  # ЛР №3 внутри
@@ -693,3 +780,4 @@ if __name__ == '__main__':
     #     lab_mrt(image)
     # -------------------------------------------
     stones()
+    # stones_2()
