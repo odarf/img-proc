@@ -5,6 +5,7 @@ from func import *
 from matplotlib import pyplot as plot
 from MyImage import *
 from MyFourier import *
+import matlab
 
 
 def lab_1():
@@ -232,9 +233,8 @@ def lab_7():
 
     median_filter(image3_md, 3)
     image3_md.save_image()
+    # ---------------------------------------------------------------------
 
-
-# ---------------------------------------------------------------------
 
 def lab_8():
     dt = 0.005
@@ -508,8 +508,7 @@ def lab_mrt(image: MyImage):
             if mask[row, col] == 255:  # 3, 0.8
                 # image.new_image[row, col] = (10 * np.log(image.new_image[row, col] + 1)).round()
                 image.new_image[row, col] = (3 * (image.new_image[row, col] ** 0.8)).round()
-    # buff = power_grad(image1.new_image, 1.1, 0.5)
-    # buff = logarithmic_correction(image1.new_image, 1)
+
     image.update_image(image.new_image, '-powerGraded')
     image.save_image()
 
@@ -524,18 +523,96 @@ def lab_mrt(image: MyImage):
     # res = np.hstack((imgtest, equ))
     cv2.imwrite(image.dir + image.fname + '-final-mask' + str(th) + '-.jpg', equ)
 
-    # image.update_image(image.new_image, '-eqed')
-    # image.save_image()
-    # hist = histogram_img(image, image.colors())[0]
-    # plot.plot(hist)
-    # plot.show()
-
-
-    # W I P 
-
 
 def stones():
     print('Size = 7px')
+    image = MyImage.load_image('images/stones/', 'stones', np.uint8)
+    # plot.hist(image.new_image.flatten(), 256, [0, 256])
+    # plot.title('Исходное ' + image.fname)
+    # plot.show()
+    print(otsu(image))
+    print(otsu_threshold(image, (image.height * image.width)))
+    image.treshold(115)
+    image.update_image(image.new_image, '-thed')
+    m = image.new_image
+    image.save_image()
+
+    mask = [np.array([
+        [-200, -200, -200],
+        [-200, 0, -200],
+        [-200, -200, -200]
+    ])]
+    laplas = cv2.Laplacian(image.new_image, 5)
+    # image.add_mask(mask)
+    # image.update_image(foo, '-laplas')
+    # image.save_image()
+
+    # pix_eros1 = morphological_operator(m, 6, 6, 'erosion')
+    # pix_eros2 = morphological_operator(m, 7, 7, 'erosion')
+
+    kernel1 = np.ones((6, 6), 'uint8')
+    kernel2 = np.ones((7, 7), 'uint8')
+    kernel3 = np.ones((2, 2), 'uint8')
+    pix_eros1 = cv2.erode(m, kernel1, iterations=1)
+    image.update_image(pix_eros1, '-erosed-4x4')
+    image.save_image()
+    pix_eros2 = cv2.erode(m, kernel2, iterations=1)
+    # pix_eros2 = cv2.dilate(pix_eros2, kernel3)
+    image.update_image(pix_eros2, '-erosed-5x5')
+    image.save_image()
+
+    # erosion_result1 = sub(pix_eros1, image.new_image)
+    # erosion_result2 = sub(pix_eros2, image.new_image)
+    erosion_result = sub(pix_eros1, pix_eros2)
+    # erosion_result = cv2.dilate(erosion_result, kernel3, iterations=1)
+
+    # erosion_result1 = bwareaopen(image, 4)
+    # erosion_result2 = bwareaopen(image, 5)
+    # erosion_result = sub(erosion_result2, erosion_result1)
+
+    image.update_image(erosion_result, '-erosed')
+    image.save_image()
+
+    for row in range(1, image.height-1):
+        for col in range(1, image.width-1):
+            if image.new_image[row, col] == 255:
+                if image.new_image[row, col-1] == 0 and image.new_image[row, col+1] == 0 and image.new_image[row-1, col-1] == 0 and image.new_image[row-1, col] == 0 and image.new_image[row-1, col+1] == 0 and image.new_image[row+1, col-1] == 0 and image.new_image[row+1, col] == 0 and image.new_image[row+1, col+1] == 0:
+                    image.new_image[row, col] = 123
+
+
+    count = 0
+    for row in range(image.height):
+        for col in range(image.width):
+            if image.new_image[row, col] == 123:
+                count += 1
+    print('Кол-во камней = ', count)
+
+    for row in range(image.height):
+        for col in range(image.width):
+            if image.new_image[row, col] == 123:
+                image.new_image[row, col] = 238
+            else:
+                image.new_image[row, col] = 0
+    circles = np.ones(shape=(len(image.new_image), len(image.new_image[0]), 3), dtype=np.uint8)
+    for row in range(image.height):
+        for col in range(image.width):
+            if image.new_image[row, col] == 238:
+                cv2.circle(circles, (col, row), 6, (0, 0, 255), 2)
+    # image.negative()
+    # dil = cv2.dilate(image.new_image, kernel3, iterations=1)
+    # image.update_image((dil + laplas), '-sumMaskLaplas')
+    # image.update_image(image.new_image + circles, '-circled')
+    image.original_image = np.abs(image.original_image - 50)
+    image.update_image(np.abs(image.new_image), '-final')
+
+    a = cv2.imread('images/stones/stones.jpg')
+    b = cv2.addWeighted(a, 0.7, circles, 1, 0.0)
+
+    cv2.imwrite('images/stones/rgb-final.jpg', b)
+
+
+    image.save_image()
+
 
 if __name__ == '__main__':
     # lab_1()  # ЛР №3 внутри
@@ -601,13 +678,15 @@ if __name__ == '__main__':
     # -------------------------------------
 
     # lab_12()
-    images = [
-             dat_image_binary_read('images/mrt/brain-h/', 'brain-H_x512', '.bin', 512, 512, format='h'),
-             dat_image_binary_read('images/mrt/brain-v/', 'brain-V_x256', '.bin', 256, 256, format='h'),
-             dat_image_binary_read('images/mrt/spine-h/', 'spine-H_x256', '.bin', 256, 256, format='h'),
-             dat_image_binary_read('images/mrt/spine-v/', 'spine-V_x512', '.bin', 512, 512, format='h')
-
-        ]
-    for image in images:
-        lab_mrt(image)
-
+    # ---------- Творческое задание №1 ----------
+    # images = [
+    #          dat_image_binary_read('images/mrt/brain-h/', 'brain-H_x512', '.bin', 512, 512, format='h'),
+    #          dat_image_binary_read('images/mrt/brain-v/', 'brain-V_x256', '.bin', 256, 256, format='h'),
+    #          dat_image_binary_read('images/mrt/spine-h/', 'spine-H_x256', '.bin', 256, 256, format='h'),
+    #          dat_image_binary_read('images/mrt/spine-v/', 'spine-V_x512', '.bin', 512, 512, format='h')
+    #
+    #     ]
+    # for image in images:
+    #     lab_mrt(image)
+    # -------------------------------------------
+    stones()

@@ -2,6 +2,7 @@ import math
 import random
 import struct
 
+import cv2
 import matplotlib.pyplot
 from PIL import Image, ImageDraw
 import numpy as np
@@ -806,17 +807,17 @@ def substract_images(image1: np.ndarray, image2: np.ndarray):
     if image1.shape[0] != image2.shape[0] or image1.shape[1] != image2.shape[1]:
         print('Can\'t compare images with different size')
         return 0
-    output = np.zeros((image1.shape[0], image1.shape[1]), dtype=float)
-    wdata1 = np.zeros((image1.shape[0], image1.shape[1]), dtype=float)
-    wdata2 = np.zeros((image1.shape[0], image1.shape[1]), dtype=float)
-    for i in range(image1.shape[0]):
-        for j in range(image1.shape[1]):
-            wdata1[i, j] = float(image1[i, j])
-            wdata2[i, j] = float(image2[i, j])
+    output = np.ones((image1.shape[0], image1.shape[1]), dtype=np.uint8)
+    # wdata1 = np.zeros((image1.shape[0], image1.shape[1]), dtype=float)
+    # wdata2 = np.zeros((image1.shape[0], image1.shape[1]), dtype=float)
+    # for i in range(image1.shape[0]):
+    #     for j in range(image1.shape[1]):
+    #         wdata1[i, j] = image1[i, j]
+    #         wdata2[i, j] = image2[i, j]
 
     for i in range(image1.shape[0]):
         for j in range(image1.shape[1]):
-            output[i, j] = wdata1[i, j] - wdata2[i, j]
+            output[i, j] = image1[i, j] - image2[i, j]
     return output
 
 
@@ -840,9 +841,19 @@ def laplasian(m):
 
 
 def morphological_operator(image, mask_x, mask_y, morph: str) -> np.array:
+    # mask_x = mask_x
+    # mask_y = mask_y
+    # if mask_x % 2 == 0:
+    #     mask_x = mask_x + 1
+    # if mask_y % 2 == 0:
+    #     mask_y = mask_y + 1
+
     er_mask = np.zeros((mask_y, mask_x), dtype=float) + 255
     height = image.shape[0]
     width = image.shape[1]
+
+    mask_center_x = math.floor(mask_x / 2)
+    mask_center_y = math.floor(mask_y / 2)
 
     output = []
     for row in range(height):
@@ -860,16 +871,27 @@ def morphological_operator(image, mask_x, mask_y, morph: str) -> np.array:
                         if image[(row - (mask_y // 2) + mask_row), (col - (mask_x // 2) + mask_col)] != \
                                 er_mask[mask_row, mask_col]:
                             check_sum += 1
-                if check_sum == mask_y * mask_x:
-                    if morph == 'dilatation':
+
+                if morph == 'dilatation':
+                    if check_sum == mask_y * mask_x:
                         new_row.append(0)
-                    elif morph == 'erosion':
+                    else:
                         new_row.append(255)
-                else:
-                    if morph == 'dilatation':
-                        new_row.append(255)
-                    elif morph == 'erosion':
+                elif morph == 'erosion':
+                    if check_sum == 0:
+                        new_row.append(image[row, col])
+                    else:
                         new_row.append(0)
+                # if check_sum == mask_y * mask_x:
+                #     if morph == 'dilatation':
+                #         new_row.append(0)
+                #     elif morph == 'erosion':
+                #         new_row.append(255)
+                # else:
+                #     if morph == 'dilatation':
+                #         new_row.append(255)
+                #     elif morph == 'erosion':
+                #         new_row.append(0)
 
         output.append(new_row)
 
@@ -1001,4 +1023,31 @@ def otsu(image: MyImage) -> int:
     return final_thresh
 
 
+def bwareaopen(src: MyImage, min_size, connectivity=4) -> np.ndarray:
+    image = src.new_image
+    output = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
+        image, connectivity=connectivity
+    )
+    for i in range(num_labels):
+        labels_size = stats[i, cv2.CC_STAT_AREA]
+        if labels_size > min_size:
+            output[labels == i] = image[labels == i]
+            image[labels == i] = 0
 
+    return output
+
+
+def sub(image1, image2):
+    output = np.zeros((image1.shape[0], image1.shape[1]), dtype=np.uint8)
+    for i in range(image1.shape[0]):
+        for j in range(image1.shape[1]):
+            diff = image1[i, j] - image2[i, j]
+            output[i, j] = np.abs(diff)
+            # if diff <= 0:
+            #     output[i, j] = 0
+            # else:
+            #     output[i, j] = diff
+
+
+    return output
