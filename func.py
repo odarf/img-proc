@@ -1023,19 +1023,18 @@ def otsu(image: MyImage) -> int:
     return final_thresh
 
 
-def bwareaopen(src: MyImage, min_size, connectivity=4) -> np.ndarray:
-    image = src.new_image
+def bwareaopen(image, min_size, connectivity=8) -> np.ndarray:
     output = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
     num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
         image, connectivity=connectivity
     )
     for i in range(num_labels):
         labels_size = stats[i, cv2.CC_STAT_AREA]
-        if labels_size > min_size:
+        if labels_size < min_size:  # 1. < return image, 2. > return output
             output[labels == i] = image[labels == i]
             image[labels == i] = 0
 
-    return output
+    return image
 
 
 def sub(image1, image2):
@@ -1048,6 +1047,5 @@ def sub(image1, image2):
             #     output[i, j] = 0
             # else:
             #     output[i, j] = diff
-
 
     return output

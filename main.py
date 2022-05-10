@@ -532,16 +532,11 @@ def stones():
     # plot.show()
     print(otsu(image))
     print(otsu_threshold(image, (image.height * image.width)))
-    image.treshold(115)
+    image.treshold(135)
     image.update_image(image.new_image, '-thed')
     m = image.new_image
     image.save_image()
 
-    mask = [np.array([
-        [-200, -200, -200],
-        [-200, 0, -200],
-        [-200, -200, -200]
-    ])]
     laplas = cv2.Laplacian(image.new_image, 5)
     # image.add_mask(mask)
     # image.update_image(foo, '-laplas')
@@ -557,21 +552,30 @@ def stones():
     image.update_image(pix_eros1, '-erosed-4x4')
     image.save_image()
     pix_eros2 = cv2.erode(m, kernel2, iterations=1)
-    # pix_eros2 = cv2.dilate(pix_eros2, kernel3)
+    kernel4 = np.ones((1, 1), 'uint8')
+    pix_eros2 = cv2.erode(pix_eros2, kernel4, iterations=1)
+
     image.update_image(pix_eros2, '-erosed-5x5')
     image.save_image()
 
-    # erosion_result1 = sub(pix_eros1, image.new_image)
-    # erosion_result2 = sub(pix_eros2, image.new_image)
-    erosion_result = sub(pix_eros1, pix_eros2)
-    # erosion_result = cv2.dilate(erosion_result, kernel3, iterations=1)
+    # erosion_result = sub(pix_eros1, pix_eros2)
+    erosion_result = np.subtract(pix_eros1, pix_eros2)
 
-    # erosion_result1 = bwareaopen(image, 4)
-    # erosion_result2 = bwareaopen(image, 5)
-    # erosion_result = sub(erosion_result2, erosion_result1)
+    # result1 = bwareaopen(m, 11)
+    # image.update_image(result1, '-bwareaopen1')
+    # image.save_image()
+    # result1 = image.new_image
+    # result2 = bwareaopen(m, 121)
+    # image.update_image(result2, '-bwareaopen2')
+    # image.save_image()
+    # #erosion_result = sub(m, erosion_result1)
+    # erosion_result = np.subtract(result1, result2)
+
+
 
     image.update_image(erosion_result, '-erosed')
     image.save_image()
+
 
     for row in range(1, image.height-1):
         for col in range(1, image.width-1):
@@ -609,7 +613,6 @@ def stones():
     b = cv2.addWeighted(a, 0.7, circles, 1, 0.0)
 
     cv2.imwrite('images/stones/rgb-final.jpg', b)
-
 
     image.save_image()
 
