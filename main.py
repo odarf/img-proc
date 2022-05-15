@@ -5,7 +5,7 @@ from func import *
 from matplotlib import pyplot as plot
 from MyImage import *
 from MyFourier import *
-import matlab
+# import matlab
 
 
 def lab_1():
@@ -532,7 +532,7 @@ def stones():
     # plot.show()
     print(otsu(image))
     print(otsu_threshold(image, (image.height * image.width)))
-    image.treshold(150)
+    image.treshold(135)
     image.update_image(image.new_image, '-thed')
     m = image.new_image
     image.save_image()
@@ -552,7 +552,7 @@ def stones():
     image.update_image(pix_eros1, '-erosed-' + str(kernel1.shape[0]))
     image.save_image()
     pix_eros2 = cv2.erode(m, kernel2, iterations=1)
-    pix_eros2 = cv2.dilate(pix_eros2, kernel3, iterations=1)
+    # pix_eros2 = cv2.dilate(pix_eros2, kernel3, iterations=1)
 
     image.update_image(pix_eros2, '-erosed-' + str(kernel2.shape[0]))
     image.save_image()
@@ -563,33 +563,46 @@ def stones():
     image.update_image(erosion_result, '-erosed')
     image.save_image()
 
-    for row in range(2, image.height - 2):
-        for col in range(2, image.width - 2):
+    # for row in range(2, image.height - 2):
+    #     for col in range(2, image.width - 2):
+    #         if image.new_image[row, col] == 255:
+    #             if image.new_image[row, col - 1] == 0 and \
+    #                     image.new_image[row, col + 1] == 0 and \
+    #                     image.new_image[row, col - 2] == 0 and \
+    #                     image.new_image[row, col + 2] == 0 and \
+    #                     image.new_image[row - 1, col] == 0 and \
+    #                     image.new_image[row - 1, col - 1] == 0 and \
+    #                     image.new_image[row - 1, col + 1] == 0 and \
+    #                     image.new_image[row - 1, col + 2] == 0 and \
+    #                     image.new_image[row - 1, col - 2] == 0 and \
+    #                     image.new_image[row + 1, col] == 0 and \
+    #                     image.new_image[row + 1, col - 1] == 0 and \
+    #                     image.new_image[row + 1, col + 1] == 0 and \
+    #                     image.new_image[row + 1, col + 2] == 0 and \
+    #                     image.new_image[row + 1, col - 2] == 0 and \
+    #                     image.new_image[row + 2, col] == 0 and \
+    #                     image.new_image[row + 2, col + 1] == 0 and \
+    #                     image.new_image[row + 2, col - 1] == 0 and \
+    #                     image.new_image[row + 2, col + 2] == 0 and \
+    #                     image.new_image[row + 2, col - 2] == 0 and \
+    #                     image.new_image[row - 2, col] == 0 and \
+    #                     image.new_image[row - 2, col - 1] == 0 and \
+    #                     image.new_image[row - 2, col + 1] == 0 and \
+    #                     image.new_image[row - 2, col - 2] == 0 and \
+    #                     image.new_image[row - 2, col + 2] == 0:
+    #                 image.new_image[row, col] = 123
+
+    for row in range(1, image.height - 1):
+        for col in range(1, image.width - 1):
             if image.new_image[row, col] == 255:
                 if image.new_image[row, col - 1] == 0 and \
                         image.new_image[row, col + 1] == 0 and \
-                        image.new_image[row, col - 2] == 0 and \
-                        image.new_image[row, col + 2] == 0 and \
                         image.new_image[row - 1, col] == 0 and \
                         image.new_image[row - 1, col - 1] == 0 and \
                         image.new_image[row - 1, col + 1] == 0 and \
-                        image.new_image[row - 1, col + 2] == 0 and \
-                        image.new_image[row - 1, col - 2] == 0 and \
                         image.new_image[row + 1, col] == 0 and \
                         image.new_image[row + 1, col - 1] == 0 and \
-                        image.new_image[row + 1, col + 1] == 0 and \
-                        image.new_image[row + 1, col + 2] == 0 and \
-                        image.new_image[row + 1, col - 2] == 0 and \
-                        image.new_image[row + 2, col] == 0 and \
-                        image.new_image[row + 2, col + 1] == 0 and \
-                        image.new_image[row + 2, col - 1] == 0 and \
-                        image.new_image[row + 2, col + 2] == 0 and \
-                        image.new_image[row + 2, col - 2] == 0 and \
-                        image.new_image[row - 2, col] == 0 and \
-                        image.new_image[row - 2, col - 1] == 0 and \
-                        image.new_image[row - 2, col + 1] == 0 and \
-                        image.new_image[row - 2, col - 2] == 0 and \
-                        image.new_image[row - 2, col + 2] == 0:
+                        image.new_image[row + 1, col + 1] == 0:
                     image.new_image[row, col] = 123
 
     count = 0
@@ -779,5 +792,5 @@ if __name__ == '__main__':
     # for image in images:
     #     lab_mrt(image)
     # -------------------------------------------
-    # stones()
-    stones_2()
+    stones()
+    # stones_2()
