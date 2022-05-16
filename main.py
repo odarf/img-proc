@@ -1,5 +1,5 @@
 import numpy as np
-import cv2
+import cv2 as cv
 import func
 from func import *
 from matplotlib import pyplot as plot
@@ -717,6 +717,30 @@ def stones_2():
 
     image.save_image()
 
+
+def test():
+    image = cv.imread("images/stones/stones.jpg")
+    image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
+    gray_image = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
+    kernel = np.ones((2, 2), 'uint8')  # "удаление" совсем мелких камней
+    _, binary = cv.threshold(gray_image, 135, 255, cv.THRESH_BINARY)
+    binary = cv.erode(binary, kernel, iterations=1)
+    plot.imshow(binary, cmap="gray")
+    plot.show()
+    contours, hierarchy = cv.findContours(binary, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    count = 0
+    for c in contours:
+        (x, y, w, h) = cv.boundingRect(c)
+        # print('width = ', w, ', height = ', h)
+        if w + h == 7:
+            cv.rectangle(image, (x, y), (x+w, y+h), (255, 255, 0), 1)
+            count += 1
+    # image = cv.drawContours(image, contours[1], -1, (0, 255, 0), 2)
+    plot.imshow(image)
+    plot.show()
+
+    print(count)
+
 if __name__ == '__main__':
     # lab_1()  # ЛР №3 внутри
     # lab_2()  # ЛР №3 внутри
@@ -792,5 +816,6 @@ if __name__ == '__main__':
     # for image in images:
     #     lab_mrt(image)
     # -------------------------------------------
-    stones()
+    # stones()
     # stones_2()
+    test()
