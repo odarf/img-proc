@@ -1,3 +1,4 @@
+import imutils
 import numpy as np
 import cv2 as cv
 from scipy import ndimage
@@ -547,20 +548,20 @@ def stones():
     # pix_eros1 = morphological_operator(m, 6, 6, 'erosion')
     # pix_eros2 = morphological_operator(m, 7, 7, 'erosion')
 
-    kernel1 = np.ones((6, 6), 'uint8')
-    kernel2 = np.ones((7, 7), 'uint8')
-    kernel3 = np.ones((1, 1), 'uint8')
+    kernel1 = np.ones((6, 6), dtype="uint8")
+    kernel2 = np.ones((7, 7), dtype="uint8")
+    kernel3 = np.ones((4, 4), dtype="uint8")
     pix_eros1 = cv2.erode(m, kernel1, iterations=1)
     image.update_image(pix_eros1, '-erosed-' + str(kernel1.shape[0]))
     image.save_image()
     pix_eros2 = cv2.erode(m, kernel2, iterations=1)
-    # pix_eros2 = cv2.dilate(pix_eros2, kernel3, iterations=1)
+    pix_eros2 = cv2.dilate(pix_eros2, kernel3, iterations=1)
 
     image.update_image(pix_eros2, '-erosed-' + str(kernel2.shape[0]))
     image.save_image()
 
-    # erosion_result = sub(pix_eros1, pix_eros2)
-    erosion_result = np.subtract(pix_eros1, pix_eros2)
+    erosion_result = sub(pix_eros1, pix_eros2)
+    # erosion_result = np.subtract(pix_eros1, pix_eros2)
 
     image.update_image(erosion_result, '-erosed')
     image.save_image()
@@ -593,38 +594,30 @@ def stones():
     #                     image.new_image[row - 2, col - 2] == 0 and \
     #                     image.new_image[row - 2, col + 2] == 0:
     #                 image.new_image[row, col] = 123
-
-    for row in range(1, image.height - 1):
-        for col in range(1, image.width - 1):
-            if image.new_image[row, col] == 255:
-                if image.new_image[row, col - 1] == 0 and \
-                        image.new_image[row, col + 1] == 0 and \
-                        image.new_image[row - 1, col] == 0 and \
-                        image.new_image[row - 1, col - 1] == 0 and \
-                        image.new_image[row - 1, col + 1] == 0 and \
-                        image.new_image[row + 1, col] == 0 and \
-                        image.new_image[row + 1, col - 1] == 0 and \
-                        image.new_image[row + 1, col + 1] == 0:
-                    image.new_image[row, col] = 123
-
     count = 0
-    for row in range(image.height):
-        for col in range(image.width):
-            if image.new_image[row, col] == 123:
-                count += 1
-    print('Кол-во камней = ', count)
-
-    for row in range(image.height):
-        for col in range(image.width):
-            if image.new_image[row, col] == 123:
-                image.new_image[row, col] = 238
-            else:
-                image.new_image[row, col] = 0
     circles = np.ones(shape=(len(image.new_image), len(image.new_image[0]), 3), dtype=np.uint8)
-    for row in range(image.height):
-        for col in range(image.width):
-            if image.new_image[row, col] == 238:
+
+    for row in range(1, image.height, 1):
+        for col in range(1, image.width, 1):
+            if image.new_image[row, col] == 0:
+                continue
+            is_stone = image.new_image[row-1, col-1]
+            is_stone += image.new_image[row-1, col]
+            is_stone += image.new_image[row-1, col+1]
+
+            is_stone += image.new_image[row, col-1]
+            is_stone += image.new_image[row, col+1]
+
+            is_stone += image.new_image[row+1, col-1]
+            is_stone += image.new_image[row+1, col]
+            is_stone += image.new_image[row+1, col+1]
+
+            if is_stone == 0:
+                count += 1
                 cv2.circle(circles, (col, row), 6, (0, 0, 255), 2)
+
+    print('TEST', count)
+    count = 0
 
     image.original_image = np.abs(image.original_image - 50)
     image.update_image(np.abs(image.new_image), '-final')
@@ -724,41 +717,73 @@ SIZE = 7
 
 
 def test():
-    image = cv.imread("images/stones/stones.jpg")
+    # считывается изображение
+    my_image = MyImage.load_image('images/stones/', 'stones', np.uint8)
+    buff_image = MyImage.load_image('images/stones/', 'stones', np.uint8)
+    image = my_image.new_image
+    # image = cv.imread("images/stones/stones.jpg")
+
+    # приводим к шкале серости
     image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
     gray_image = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
+    # бинаризируем
     _, binary = cv.threshold(gray_image, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)
-    plot.imshow(binary, cmap="gray")
-    # plot.show()
 
+    plot.imshow(binary, cmap="gray")
+    plot.show()
+    buff_image.update_image(binary, '-testBinary')
+    buff_image.save_image()
+
+    # Для разделения двух объектов на картинке
+    # расчитываем расстояние от белого писеля до ближайшего чёрного
+    # и отделяем пересекающиеся контуры друг от друга
     D = ndimage.distance_transform_edt(binary)
     localMax = peak_local_max(D, indices=False, min_distance=5, labels=binary)
     markers = ndimage.label(localMax, structure=np.ones((3, 3)))[0]
     labels = watershed(-D, markers, mask=binary)
     print("[INFO] {} unique segments found".format(len(np.unique(labels)) - 1))
 
+    # массив с маской
     masks = np.zeros(gray_image.shape, dtype="uint8")
     masks = cv.cvtColor(masks, cv.COLOR_GRAY2RGB)
 
     contours, _ = cv.findContours(binary, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    print('Huh?', len(contours))
     count = 0
-    for c in contours:
-        (x, y, w, h) = cv.boundingRect(c)
-        # print('width = ', w, ', height = ', h)
-        # if (int(h) == 7 and int(h) > int(w)) or (int(w) == 7 and int(w) > int(h)):
+    for label in np.unique(labels):
+        if label == 0:
+            continue
+        mask = np.zeros(gray_image.shape, dtype="uint8")
+        mask[labels == label] = 255
+        cnts = cv.findContours(mask.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts)
+        max_contour = max(cnts, key=cv.contourArea)
+        area = cv.contourArea(max_contour)
+        x, y, w, h = cv.boundingRect(max_contour)
+        # проверка на размер
+        #if (int(h) == 7 and int(h) > int(w)) or (int(w) == 7 and int(w) > int(h)):
         if int(h) == 7 and int(w) == 7:
             cv.rectangle(image, (x, y), (x+w, y+h), (255, 255, 0), 1)
+            cv.rectangle(masks, (x, y), (x+w, y+h), (255, 255, 255), -1)
             count += 1
             # print('Found stone: width =', w, 'height =', h, 'Total count:', count)
     # image = cv.drawContours(image, contours[1], -1, (0, 255, 0), 2)
     plot.imshow(image)
     plot.show()
+    buff_image.update_image(image, '-testFinalAllSides-' + str(count))
+    buff_image.save_image()
+    plot.imshow(masks)
+    plot.title('masks')
+    plot.show()
+    buff_image.update_image(masks, '-testMask')
+    buff_image.save_image()
 
     print(count)
 
 
 def test2():
     image = MyImage.load_image('images/stones/', 'stones', np.uint8)
+    buf_image = MyImage.load_image('images/stones/', 'stones', np.uint8)
     erosion_level = SIZE - 1
 
     image.treshold(135)
@@ -770,8 +795,10 @@ def test2():
 
     padded_image = np.zeros((image_row + (2 * pad_height), image_col + (2 * pad_width)))
     padded_image[pad_height:-pad_height, pad_width:-pad_width] = image.new_image
-
+    buf_image.update_image(padded_image, '-paddedStart')
+    buf_image.save_image()
     stones = 0
+    circles = np.ones(shape=(len(image.new_image), len(image.new_image[0]), 3), dtype=np.uint8)
 
     for i in range(1, image_row + 2, 1):
         for j in range(1, image_col + 2, 1):
@@ -791,7 +818,12 @@ def test2():
 
             if is_stone == 0:
                 stones += 1
+                cv2.circle(circles, (i, j), 6, (0, 0, 255), 2)
 
+    a = cv2.imread('images/stones/stones.jpg')
+    b = cv2.addWeighted(a, 0.7, circles, 1, 0.0)
+
+    cv2.imwrite('images/stones/rgb-test2-' + str(stones) + '.jpg', b)
     print(stones)
 
 
@@ -870,7 +902,7 @@ if __name__ == '__main__':
     # for image in images:
     #     lab_mrt(image)
     # -------------------------------------------
-    # stones()
-    # stones_2()
-    test()
+    stones()  # тестовая версия по двум сторонам
+    # stones_2()  # тестовая версия по одной стороне
+    # test()  # финальная версия
     # test2()

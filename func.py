@@ -1042,10 +1042,10 @@ def sub(image1, image2):
     for i in range(image1.shape[0]):
         for j in range(image1.shape[1]):
             diff = image1[i, j] - image2[i, j]
-            output[i, j] = np.abs(diff)
-            # if diff <= 0:
-            #     output[i, j] = 0
-            # else:
-            #     output[i, j] = diff
+            # output[i, j] = np.abs(diff)
+            if diff <= 0:
+                output[i, j] = 0
+            else:
+                output[i, j] = diff
 
     return output
