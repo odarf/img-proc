@@ -1,6 +1,8 @@
 import numpy as np
 import cv2 as cv
-import func
+from scipy import ndimage
+from skimage.feature import peak_local_max
+from skimage.segmentation import watershed
 from func import *
 from matplotlib import pyplot as plot
 from MyImage import *
@@ -718,28 +720,80 @@ def stones_2():
     image.save_image()
 
 
+SIZE = 7
+
+
 def test():
     image = cv.imread("images/stones/stones.jpg")
     image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
     gray_image = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
-    kernel = np.ones((2, 2), 'uint8')  # "удаление" совсем мелких камней
-    _, binary = cv.threshold(gray_image, 135, 255, cv.THRESH_BINARY)
-    binary = cv.erode(binary, kernel, iterations=1)
+    _, binary = cv.threshold(gray_image, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)
     plot.imshow(binary, cmap="gray")
-    plot.show()
-    contours, hierarchy = cv.findContours(binary, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    # plot.show()
+
+    D = ndimage.distance_transform_edt(binary)
+    localMax = peak_local_max(D, indices=False, min_distance=5, labels=binary)
+    markers = ndimage.label(localMax, structure=np.ones((3, 3)))[0]
+    labels = watershed(-D, markers, mask=binary)
+    print("[INFO] {} unique segments found".format(len(np.unique(labels)) - 1))
+
+    masks = np.zeros(gray_image.shape, dtype="uint8")
+    masks = cv.cvtColor(masks, cv.COLOR_GRAY2RGB)
+
+    contours, _ = cv.findContours(binary, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
     count = 0
     for c in contours:
         (x, y, w, h) = cv.boundingRect(c)
         # print('width = ', w, ', height = ', h)
-        if w + h == 7:
+        # if (int(h) == 7 and int(h) > int(w)) or (int(w) == 7 and int(w) > int(h)):
+        if int(h) == 7 and int(w) == 7:
             cv.rectangle(image, (x, y), (x+w, y+h), (255, 255, 0), 1)
             count += 1
+            # print('Found stone: width =', w, 'height =', h, 'Total count:', count)
     # image = cv.drawContours(image, contours[1], -1, (0, 255, 0), 2)
     plot.imshow(image)
     plot.show()
 
     print(count)
+
+
+def test2():
+    image = MyImage.load_image('images/stones/', 'stones', np.uint8)
+    erosion_level = SIZE - 1
+
+    image.treshold(135)
+    eroded = morphological_operator(image.new_image, erosion_level, erosion_level, 'erosion')
+    image.update_image(eroded, '-eroded')
+    image_row, image_col = image.new_image.shape
+    pad_height = 1
+    pad_width = 1
+
+    padded_image = np.zeros((image_row + (2 * pad_height), image_col + (2 * pad_width)))
+    padded_image[pad_height:-pad_height, pad_width:-pad_width] = image.new_image
+
+    stones = 0
+
+    for i in range(1, image_row + 2, 1):
+        for j in range(1, image_col + 2, 1):
+            if padded_image[i][j] == 0:
+                continue
+
+            is_stone = padded_image[i - 1][j - 1]
+            is_stone += padded_image[i - 1][j]
+            is_stone += padded_image[i - 1][j + 1]
+
+            is_stone += padded_image[i][j - 1]
+            is_stone += padded_image[i][j + 1]
+
+            is_stone += padded_image[i + 1][j - 1]
+            is_stone += padded_image[i + 1][j]
+            is_stone += padded_image[i + 1][j + 1]
+
+            if is_stone == 0:
+                stones += 1
+
+    print(stones)
+
 
 if __name__ == '__main__':
     # lab_1()  # ЛР №3 внутри
@@ -785,7 +839,7 @@ if __name__ == '__main__':
     #     MyImage.load_image('images/lab11/', 'model-noize-linearFiltered', np.uint8),
     #     MyImage.load_image('images/lab11/', 'model-noize-medianFiltered', np.uint8)
     # ]
-    # for image in images:
+    # for imagimage_sd.modified_imagee in images:
     #     lab_11_gradient(image)
     #     lab_11_gradient(image, 'vh')
     #     lab_11_gradient(image, 'd')
@@ -819,3 +873,4 @@ if __name__ == '__main__':
     # stones()
     # stones_2()
     test()
+    # test2()
